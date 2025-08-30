@@ -1,5 +1,6 @@
 # MCP
 *.mcp.json
+*.serena
 
 # Logs
 logs
