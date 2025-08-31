@@ -1,5 +1,5 @@
-import { Header } from '../componets/Header'
-import { Footer } from '../componets/Footer';
+import { Header } from '../components/Header'
+import { Footer } from '../components/Footer';
 import { Outlet, useLocation } from 'react-router';
 import { useTouchNavigation } from '../hooks/useTouchNavigation';
 
