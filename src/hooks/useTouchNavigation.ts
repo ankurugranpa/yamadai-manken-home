@@ -43,7 +43,6 @@ export function useTouchNavigation(pages: PageInfo[], currentPath: string) {
     
     // 水平方向のドラッグかどうか判定
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-      event.preventDefault(); // スクロールを防ぐ
       
       const screenWidth = window.innerWidth;
       const maxDragDistance = screenWidth * 0.8; // 最大ドラッグ距離
