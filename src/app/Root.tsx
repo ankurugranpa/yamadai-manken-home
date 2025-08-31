@@ -11,7 +11,7 @@ export function Root() {
     ];
 
     return (
-        <div className="h-screen flex flex-col">
+        <div className="flex flex-col" style={{ height: '100dvh' }}>
             {/* Header - Fixed height */}
             <Header />
             
