@@ -50,7 +50,7 @@ export function Root() {
                 {/* Next Page Preview (右側から左へ) */}
                 {nextPage && dragOffset > 0 && (
                     <div 
-                        className="absolute inset-0 bg-blue-50 p-4 sm:p-6 lg:p-8"
+                        className="absolute inset-0 bg-gray-100 p-4 sm:p-6 lg:p-8"
                         style={{
                             transform: `translateX(${dragOffset - window.innerWidth}px)`,
                             transition: isDragging ? 'none' : 'transform 200ms ease-out'
@@ -58,8 +58,8 @@ export function Root() {
                     >
                         <div className="h-full flex items-center justify-center">
                             <div className="text-center">
-                                <h1 className="text-3xl font-bold text-blue-900">{nextPage.name}</h1>
-                                <p className="mt-4 text-blue-600">次のページ</p>
+                                <h1 className="text-3xl font-bold text-gray-900">{nextPage.name}</h1>
+                                <p className="mt-4 text-gray-600">次のページ</p>
                             </div>
                         </div>
                     </div>
@@ -68,7 +68,7 @@ export function Root() {
                 {/* Previous Page Preview (左側から右へ) */}
                 {prevPage && dragOffset < 0 && (
                     <div 
-                        className="absolute inset-0 bg-green-50 p-4 sm:p-6 lg:p-8"
+                        className="absolute inset-0 bg-gray-100 p-4 sm:p-6 lg:p-8"
                         style={{
                             transform: `translateX(${dragOffset + window.innerWidth}px)`,
                             transition: isDragging ? 'none' : 'transform 200ms ease-out'
@@ -76,8 +76,8 @@ export function Root() {
                     >
                         <div className="h-full flex items-center justify-center">
                             <div className="text-center">
-                                <h1 className="text-3xl font-bold text-green-900">{prevPage.name}</h1>
-                                <p className="mt-4 text-green-600">前のページ</p>
+                                <h1 className="text-3xl font-bold text-gray-900">{prevPage.name}</h1>
+                                <p className="mt-4 text-gray-600">前のページ</p>
                             </div>
                         </div>
                     </div>
