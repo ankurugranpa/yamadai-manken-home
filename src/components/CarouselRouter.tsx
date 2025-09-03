@@ -70,7 +70,7 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
       >
         <CarouselContent className="h-full">
           {routes.map((route, index) => (
-            <CarouselItem key={route.path} className="h-full w-full flex-shrink-0">
+            <CarouselItem key={route.path} className="h-full w-full flex-shrink-0 pl-0">
               <div className="h-full w-full p-4 sm:p-6 lg:p-8">
                 {route.element}
               </div>
