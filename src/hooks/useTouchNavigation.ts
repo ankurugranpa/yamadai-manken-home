@@ -26,6 +26,9 @@ export function useTouchNavigation(pages: PageInfo[], currentPath: string) {
   const prevPage = currentIndex > 0 ? pages[currentIndex - 1] : null;
 
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    // すべてのデフォルトタッチ動作を防ぐ
+    event.preventDefault();
+    
     const touch = event.touches[0];
     touchStartRef.current = {
       x: touch.clientX,
@@ -37,6 +40,9 @@ export function useTouchNavigation(pages: PageInfo[], currentPath: string) {
   };
 
   const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    // すべてのデフォルトタッチ動作を防ぐ
+    event.preventDefault();
+    
     const touchStart = touchStartRef.current;
     if (!touchStart) return;
 
@@ -75,6 +81,9 @@ export function useTouchNavigation(pages: PageInfo[], currentPath: string) {
   };
 
   const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    // すべてのデフォルトタッチ動作を防ぐ
+    event.preventDefault();
+    
     const touchEnd = event.changedTouches[0];
     const touchStart = touchStartRef.current;
     

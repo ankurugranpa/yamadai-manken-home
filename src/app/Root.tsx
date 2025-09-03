@@ -23,7 +23,18 @@ export function Root() {
     } = useTouchNavigation(pages, location.pathname);
 
     return (
-        <div className="flex flex-col" style={{ height: '100dvh' }}>
+        <div 
+            className="flex flex-col" 
+            style={{ 
+                height: '100dvh',
+                touchAction: 'none',
+                overscrollBehavior: 'none',
+                position: 'fixed',
+                width: '100%',
+                top: 0,
+                left: 0
+            }}
+        >
             {/* Header - Fixed height */}
             <Header />
             
@@ -33,6 +44,11 @@ export function Root() {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
+                style={{
+                    touchAction: 'none',
+                    overscrollBehavior: 'none',
+                    WebkitOverflowScrolling: 'touch'
+                }}
             >
                 {/* Current Page */}
                 <div 
