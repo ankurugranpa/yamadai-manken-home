@@ -17,10 +17,11 @@ const FOOTER_BUTTON_STYLES = {
   container: "h-12", // Footer全体の高さ
   button: "footer-button flex flex-col items-center justify-center w-full h-12 py-1 text-white bg-transparent hover:bg-gray-800 active:scale-95 transition-all duration-200 border-0 outline-none focus:outline-none", // アクティブボタンの共通スタイル
   buttonDisabled: "footer-button flex flex-col items-center justify-center w-full h-12 py-1 bg-transparent opacity-30 cursor-not-allowed border-0 outline-none focus:outline-none", // 無効ボタンの共通スタイル
-  icon: "h-6 w-6 mb-1", // 通常のアイコンスタイル
+  icon: "h-6 w-6 mb-1 brightness-0 invert", // 白色反転アイコン（デフォルト）
+  iconDisabled: "h-6 w-6 mb-1", // 無効時のアイコン（元の色のまま、neutral-400相当）
   iconInverted: "h-6 w-6 mb-1 brightness-0 invert", // 白色反転アイコン（メニュー用）
-  text: "text-xs text-gray-300", // 通常のテキストスタイル
-  textDisabled: "text-xs text-gray-600" // 無効時のテキストスタイル
+  text: "text-xs text-neutral-50", // 有効時のテキスト（neutral-50）
+  textDisabled: "text-xs text-neutral-200" // 無効時のテキスト（neutral-200）
 };
 
 export function Footer({ pages }: FooterProps) {
@@ -50,7 +51,7 @@ export function Footer({ pages }: FooterProps) {
             </Link>
           ) : (
             <button disabled className={FOOTER_BUTTON_STYLES.buttonDisabled}>
-              <img src={ArrowBackIcon} alt="進む" className={`${FOOTER_BUTTON_STYLES.icon} opacity-50`} />
+              <img src={ArrowBackIcon} alt="進む" className={FOOTER_BUTTON_STYLES.iconDisabled} />
               <div className={FOOTER_BUTTON_STYLES.textDisabled}>進む</div>
             </button>
           )}
@@ -78,7 +79,7 @@ export function Footer({ pages }: FooterProps) {
             </Link>
           ) : (
             <button disabled className={FOOTER_BUTTON_STYLES.buttonDisabled}>
-              <img src={ArrowForwardIcon} alt="戻る" className={`${FOOTER_BUTTON_STYLES.icon} opacity-50`} />
+              <img src={ArrowForwardIcon} alt="戻る" className={FOOTER_BUTTON_STYLES.iconDisabled} />
               <div className={FOOTER_BUTTON_STYLES.textDisabled}>戻る</div>
             </button>
           )}
