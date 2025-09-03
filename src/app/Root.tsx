@@ -27,12 +27,8 @@ export function Root() {
             className="flex flex-col" 
             style={{ 
                 height: '100dvh',
-                touchAction: 'none',
-                overscrollBehavior: 'none',
-                position: 'fixed',
-                width: '100%',
-                top: 0,
-                left: 0
+                touchAction: 'pan-x pinch-zoom',
+                overscrollBehavior: 'none'
             }}
         >
             {/* Header - Fixed height */}
@@ -45,9 +41,8 @@ export function Root() {
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 style={{
-                    touchAction: 'none',
-                    overscrollBehavior: 'none',
-                    WebkitOverflowScrolling: 'touch'
+                    touchAction: 'pan-x pinch-zoom',
+                    overscrollBehavior: 'none'
                 }}
             >
                 {/* Current Page */}
