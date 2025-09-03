@@ -11,7 +11,7 @@ import type { PageInfo, RoutePageInfo } from '../types/navigation';
 export function Root() {
     const routePages: RoutePageInfo[] = [
         { path: '/about', title: 'About', element: <About /> },
-        { path: '/home', title: 'ホーム', element: <Home /> }
+        { path: '/', title: 'ホーム', element: <Home /> }
     ];
 
     const routes = routePages.map(({ path, element }) => ({ path, element }));
