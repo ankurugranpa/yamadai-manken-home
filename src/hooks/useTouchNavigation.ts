@@ -14,6 +14,9 @@ export function useTouchNavigation(pages: PageInfo[], currentPath: string) {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
+  // タッチナビゲーション範囲設定
+  const TOUCH_AREA_RATIO = 0.18; // 画面の左右それぞれ18%がタッチ範囲
+
   const currentIndex = pages.findIndex(page => page.path === currentPath);
   
   // 日本の漫画スタイル: 右から左に読む
@@ -117,13 +120,13 @@ export function useTouchNavigation(pages: PageInfo[], currentPath: string) {
       // スワイプでない場合はタップ判定
       const touchX = touchEnd.clientX;
       
-      // 画面の左30%タッチで次のページ、右30%タッチで前のページ
-      if (touchX < screenWidth * 0.3) {
+      // タッチナビゲーション範囲を使用してページ遷移判定
+      if (touchX < screenWidth * TOUCH_AREA_RATIO) {
         // 左側タップ = 次のページ
         if (nextPage) {
           navigate(nextPage.path);
         }
-      } else if (touchX > screenWidth * 0.7) {
+      } else if (touchX > screenWidth * (1 - TOUCH_AREA_RATIO)) {
         // 右側タップ = 前のページ
         if (prevPage) {
           navigate(prevPage.path);
