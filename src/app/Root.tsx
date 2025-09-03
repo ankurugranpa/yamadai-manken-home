@@ -1,26 +1,23 @@
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer';
-import { Outlet, useLocation } from 'react-router';
-import { useTouchNavigation } from '../hooks/useTouchNavigation';
+import { CarouselRouter } from '../components/CarouselRouter';
+import { Home } from '../pages/Home';
+import { About } from '../pages/About';
+
+
 
 import type { PageInfo } from '../types/navigation';
 
 export function Root() {
+    const routes = [
+        { path: '/about', element: <About /> },
+        { path: '/home', element: <Home /> }
+    ];
+
     const pages: PageInfo[] = [
         { path: '/home', name: 'ホーム' },
         { path: '/about', name: '概要' }
     ];
-
-    const location = useLocation();
-    const { 
-        handleTouchStart, 
-        handleTouchMove, 
-        handleTouchEnd, 
-        dragOffset, 
-        isDragging,
-        nextPage,
-        prevPage 
-    } = useTouchNavigation(pages, location.pathname);
 
     return (
         <div 
@@ -34,65 +31,9 @@ export function Root() {
             {/* Header - Fixed height */}
             <Header />
             
-            {/* Main content area with touch navigation */}
-            <main 
-                className="relative flex-1 bg-gray-100 overflow-hidden"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                style={{
-                    touchAction: 'pan-x pinch-zoom',
-                    overscrollBehavior: 'none'
-                }}
-            >
-                {/* Current Page */}
-                <div 
-                    className="absolute inset-0 p-4 sm:p-6 lg:p-8"
-                    style={{
-                        transform: `translateX(${dragOffset}px)`,
-                        transition: isDragging ? 'none' : 'transform 200ms ease-out'
-                    }}
-                >
-                    <div className="h-full">
-                        <Outlet />
-                    </div>
-                </div>
-
-                {/* Next Page Preview (右側から左へ) */}
-                {nextPage && dragOffset > 0 && (
-                    <div 
-                        className="absolute inset-0 bg-gray-100 p-4 sm:p-6 lg:p-8"
-                        style={{
-                            transform: `translateX(${dragOffset - window.innerWidth}px)`,
-                            transition: isDragging ? 'none' : 'transform 200ms ease-out'
-                        }}
-                    >
-                        <div className="h-full flex items-center justify-center">
-                            <div className="text-center">
-                                <h1 className="text-3xl font-bold text-gray-900">{nextPage.name}</h1>
-                                <p className="mt-4 text-gray-600">次のページ</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Previous Page Preview (左側から右へ) */}
-                {prevPage && dragOffset < 0 && (
-                    <div 
-                        className="absolute inset-0 bg-gray-100 p-4 sm:p-6 lg:p-8"
-                        style={{
-                            transform: `translateX(${dragOffset + window.innerWidth}px)`,
-                            transition: isDragging ? 'none' : 'transform 200ms ease-out'
-                        }}
-                    >
-                        <div className="h-full flex items-center justify-center">
-                            <div className="text-center">
-                                <h1 className="text-3xl font-bold text-gray-900">{prevPage.name}</h1>
-                                <p className="mt-4 text-gray-600">前のページ</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
+            {/* Carousel-based page navigation */}
+            <main className="flex-1 overflow-hidden">
+                <CarouselRouter routes={routes} />
             </main>
             
             {/* Footer - Fixed at bottom */}
