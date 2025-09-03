@@ -6,18 +6,16 @@ import { About } from '../pages/About';
 
 
 
-import type { PageInfo } from '../types/navigation';
+import type { PageInfo, RoutePageInfo } from '../types/navigation';
 
 export function Root() {
-    const routes = [
-        { path: '/about', element: <About /> },
-        { path: '/home', element: <Home /> }
+    const routePages: RoutePageInfo[] = [
+        { path: '/about', title: 'About', element: <About /> },
+        { path: '/home', title: 'ホーム', element: <Home /> }
     ];
 
-    const pages: PageInfo[] = [
-        { path: '/home', name: 'ホーム' },
-        { path: '/about', name: '概要' }
-    ];
+    const routes = routePages.map(({ path, element }) => ({ path, element }));
+    const pages = routePages.map(({ path, title }) => ({ path, title }));
 
     return (
         <div 
@@ -28,15 +26,10 @@ export function Root() {
                 overscrollBehavior: 'none'
             }}
         >
-            {/* Header - Fixed height */}
             <Header />
-            
-            {/* Carousel-based page navigation */}
             <main className="flex-1 overflow-hidden">
                 <CarouselRouter routes={routes} />
             </main>
-            
-            {/* Footer - Fixed at bottom */}
             <Footer pages={pages} />
         </div>
     );
