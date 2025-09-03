@@ -35,22 +35,22 @@ export function MenuDrawer({ pages = [], triggerButton }: MenuDrawerProps) {
         </DrawerHeader>
         
         <div className="px-4 pb-4">
-          {pages.map((page, index) => (
+          {pages.slice().reverse().map((page, index) => (
             <DrawerClose key={page.path} asChild>
               <Link
                 to={page.path}
                 className={`flex items-center justify-between p-3 mb-2 rounded-lg transition-colors ${
                   page.path === location.pathname 
                     ? 'bg-blue-100 border-2 border-blue-300' 
-                    : 'bg-gray-50 hover:bg-gray-100'
+                    : 'bg-neutral-100 hover:bg-neutral-200'
                 }`}
               >
                 <span className="font-medium text-gray-900">{page.title}</span>
                 <div className="flex items-center gap-2">
                   {page.path === location.pathname && (
-                    <span className="text-xs text-blue-600 bg-blue-200 px-2 py-1 rounded">現在</span>
+                    <span className="text-xs text-blue-600 bg-blue-200 px-2 py-1 rounded">Now</span>
                   )}
-                  <span className="text-sm text-gray-500">#{index + 1}</span>
+                  {/* <span className="text-sm text-gray-500">#{index + 1}</span> */}
                 </div>
               </Link>
             </DrawerClose>
