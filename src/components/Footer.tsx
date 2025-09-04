@@ -6,6 +6,8 @@ import ArrowBackIcon from '../assets/ui/arrow_back_ios_24dp_1F1F1F_FILL0_wght400
 import ArrowForwardIcon from '../assets/ui/arrow_forward_ios_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg';
 import MenuIcon from '../assets/ui/menu_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg';
 import { MenuDrawer } from './MenuDrawer'
+import { SnsDrawer } from './SnsDrawer'
+import { MessageCircleMore } from 'lucide-react';
 import '../styles/footer-buttons.css';
 
 interface FooterProps {
@@ -17,9 +19,9 @@ const FOOTER_BUTTON_STYLES = {
   container: "h-12", // Footer全体の高さ
   button: "footer-button flex flex-col items-center justify-center w-full h-12 py-1 text-white bg-transparent hover:bg-gray-800 active:scale-95 transition-all duration-200 border-0 outline-none focus:outline-none", // アクティブボタンの共通スタイル
   buttonDisabled: "footer-button flex flex-col items-center justify-center w-full h-12 py-1 bg-transparent opacity-30 cursor-not-allowed border-0 outline-none focus:outline-none", // 無効ボタンの共通スタイル
-  icon: "h-6 w-6 mb-1 brightness-0 invert opacity-95", // neutral-50相当のアイコン（有効時）
-  iconDisabled: "h-6 w-6 mb-1 brightness-0 invert opacity-60", // neutral-200相当のアイコン（無効時）
-  iconInverted: "h-6 w-6 mb-1 brightness-0 invert", // 白色反転アイコン（メニュー用）
+  icon: "h-6 w-6 ml-0.5 brightness-0 invert opacity-95", // neutral-50相当のアイコン（有効時）
+  iconDisabled: "h-6 w-6 ml-0.5 brightness-0 invert opacity-60", // neutral-200相当のアイコン（無効時）
+  iconInverted: "h-6 w-6 brightness-0 invert", // 白色反転アイコン（メニュー用）
   text: "text-xs text-neutral-50", // 有効時のテキスト（neutral-50）
   textDisabled: "text-xs text-neutral-200" // 無効時のテキスト（neutral-200）
 };
@@ -37,7 +39,7 @@ export function Footer({ pages }: FooterProps) {
   const prevPage = currentIndex < pages.length - 1 ? pages[currentIndex + 1] : null;
 
   return (
-    <>
+    <div>
       <Menu pages={pages} isOpen={isMenuOpen} onClose={toggleMenu} />
 
       <footer className="text-white flex-shrink-0 bg-neutral-700 z-50">
@@ -55,6 +57,18 @@ export function Footer({ pages }: FooterProps) {
               <div className={FOOTER_BUTTON_STYLES.textDisabled}>進む</div>
             </button>
           )}
+        </div>
+
+        {/* SNSボタン */}
+        <div className="flex-1 flex justify-center">
+          <SnsDrawer 
+            triggerButton={
+              <button className={FOOTER_BUTTON_STYLES.button}>
+                <MessageCircleMore className="h-6 w-6 text-neutral-50" />
+                <div className={FOOTER_BUTTON_STYLES.text}>SNS</div>
+              </button>
+            }
+          />
         </div>
 
         {/* メニューボタン */}
@@ -86,6 +100,6 @@ export function Footer({ pages }: FooterProps) {
         </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
