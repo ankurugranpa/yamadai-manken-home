@@ -22,12 +22,14 @@ export function Root() {
             className="flex flex-col" 
             style={{ 
                 height: '100dvh',
-                touchAction: 'pan-x pinch-zoom',
+                touchAction: 'pan-x, pinch-zoom',
                 overscrollBehavior: 'none'
             }}
         >
             <Header />
-            <main className="flex-1 overflow-hidden">
+            <main className="flex-1 overflow-hidden"
+            style={{ touchAction: 'pan-x pinch-zoom' }}
+            >
                 <CarouselRouter routes={routes} />
             </main>
             <Footer pages={pages} />

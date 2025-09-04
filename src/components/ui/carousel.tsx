@@ -158,7 +158,7 @@ const CarouselContent = React.forwardRef<
     <div 
       ref={carouselRef} 
       className="overflow-hidden h-full w-full"
-      style={{ touchAction: 'pan-x' }}
+      style={{ touchAction: 'pan-x pinch-zoom'}}
     >
       <div
         ref={ref}
