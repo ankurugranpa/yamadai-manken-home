@@ -57,7 +57,7 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
   }, [api, currentIndex, navigate, routes]);
 
   return (
-    <div className="h-screen w-screen overflow-hidden">
+    <div className="h-full w-full overflow-hidden">
       <Carousel
         setApi={setApi}
         className="h-full w-full"
