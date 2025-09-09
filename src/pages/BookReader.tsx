@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../components/ui/carousel';
 
 interface BookItem {
   title: string;
@@ -8,15 +6,6 @@ interface BookItem {
   file_name: string;
 }
 
-interface BookData {
-  book_title: string;
-  year: string;
-  items: BookItem[];
-}
-
-interface BookReaderProps {
-  bookId?: string;
-}
 
 export function BookReader() {
   const { bookId, pageNumber } = useParams<{ bookId: string; pageNumber: string }>();

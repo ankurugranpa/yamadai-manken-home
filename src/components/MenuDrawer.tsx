@@ -93,7 +93,7 @@ export function MenuDrawer({ pages = [], triggerButton }: MenuDrawerProps) {
                 メニュー項目がありません
               </div>
             ) : (
-              currentPageItems.map((page, index) => {
+              currentPageItems.map((page) => {
                 // "/" パスの場合は "/home" として扱う
                 const normalizedCurrentPath = location.pathname === '/' ? '/home' : location.pathname;
                 const isCurrentPage = page.path === normalizedCurrentPath;

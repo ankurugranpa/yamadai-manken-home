@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import type { PageInfo } from '../types/navigation';
 import { Menu } from './Menu';

@@ -1,23 +1,24 @@
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer';
 import { CarouselRouter } from '../components/CarouselRouter';
-import { useLocation, Outlet } from 'react-router-dom';
+import { useLocation} from 'react-router-dom';
 import { Home } from '../pages/Home';
 import { About } from '../pages/About';
-import { About2 } from '../pages/About2';
-import { Activity } from '../pages/Activity';
-import { Entry } from '../pages/Entry';
-import { Qa } from '../pages/Qa';
 import { Bookshelf } from '../pages/Bookshelf';
-import { Book1 } from '../pages/Book1';
-import { Book1Page2 } from '../pages/Book1Page2';
-import { Book2 } from '../pages/Book2';
-import { Book2Page2 } from '../pages/Book2Page2';
-import { BookReader, BookPage } from '../pages/BookReader';
+import { BookPage } from '../pages/BookReader';
 
 
 
 import type { PageInfo, RoutePageInfo } from '../types/navigation';
+
+
+interface PageData {
+  title: string;
+  author: string;
+  file_name: string;
+}
+
+
 
 // CCV_vol35のメニュー用データ（menu.jsonから抽出、表紙から開始）
 const CCV_vol35_menu_pages = [
@@ -42,7 +43,7 @@ const CCV_vol35_menu_pages = [
 ];
 
 // CCV_vol35の全ページデータ（027.png から 000.png まで逆順）
-const CCV_vol35_all_pages = [];
+const CCV_vol35_all_pages :PageData[] = [];
 for (let i = 27; i >= 0; i--) {
   const fileName = `${i.toString().padStart(3, '0')}.png`;
   const menuPage = CCV_vol35_menu_pages.find(page => page.file_name === fileName);
@@ -53,15 +54,6 @@ for (let i = 27; i >= 0; i--) {
   });
 }
 
-const book1Routes: RoutePageInfo[] = [
-    { path: '/book/1', title: 'Book 1', element: <Book1 /> },
-    { path: '/book/1/page2', title: 'Book 1 Page 2', element: <Book1Page2 /> }
-];
-
-const book2Routes: RoutePageInfo[] = [
-    { path: '/book/2', title: 'Book 2', element: <Book2 /> },
-    { path: '/book/2/page2', title: 'Book 2 Page 2', element: <Book2Page2 /> }
-];
 
 export function Root() {
     const location = useLocation();
@@ -83,13 +75,7 @@ export function Root() {
     let activeRoutes: RoutePageInfo[];
     let navigationPages: PageInfo[];
     
-    if (currentPath.startsWith('/book/1')) {
-        activeRoutes = book1Routes;
-        navigationPages = book1Routes.map(({ path, title }) => ({ path, title }));
-    } else if (currentPath.startsWith('/book/2')) {
-        activeRoutes = book2Routes;
-        navigationPages = book2Routes.map(({ path, title }) => ({ path, title }));
-    } else if (currentPath.startsWith('/book/CCV_vol35')) {
+    if (currentPath.startsWith('/book/CCV_vol35')) {
         // CCV_vol35のページルートを作成（全ページ表示、メニューはmenu.json）
         // ページ番号を正しくマップする: page/0 = 027.png, page/1 = 026.png, ..., page/27 = 000.png
         // URLのpage番号から正しいファイル名にマップするように修正
@@ -117,7 +103,7 @@ export function Root() {
     // メニュー用のページリストを決定
     let menuPages = navigationPages;
     if (currentPath.startsWith('/book/CCV_vol35')) {
-        menuPages = CCV_vol35_menu_pages.map((page, index) => ({
+        menuPages = CCV_vol35_menu_pages.map((page) => ({
             path: `/book/CCV_vol35/page/${27 - CCV_vol35_all_pages.findIndex(p => p.file_name === page.file_name)}`,
             title: page.title
         }));

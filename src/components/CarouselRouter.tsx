@@ -56,7 +56,9 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
 
     // スライド変更イベントを監視
     api.on('select', onSelect); // Carouselがスライドするたびに onSelect が呼ばれる
-    return () => api.off('select', onSelect); // コンポーネント削除時にイベントを削除
+    return () => {
+      api.off('select', onSelect); // コンポーネント削除時にイベントを削除
+    };
   }, [api, currentIndex, navigate, routes]);
 
   return (
@@ -73,7 +75,7 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
         }}
       >
         <CarouselContent className="h-full">
-          {routes.map((route, index) => (
+          {routes.map((route) => (
             <CarouselItem key={route.path} className="basis-full p-0 h-full">
               <div className="h-full w-full" dir="ltr">
                 {route.element}

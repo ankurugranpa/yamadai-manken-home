@@ -1,6 +1,3 @@
-import toLoveruAnkuru from '../assets/to_loveru_ankuru.png';
-import mato_19 from '../assets/19.png';
-import b5 from '../assets/b5.png';
 import sakuka from '../assets/sakuka.png';
 
 export function Home() {
