@@ -1,6 +1,3 @@
-import toLoveruAnkuru from '../assets/to_loveru_ankuru.png';
-import mato_19 from '../assets/19.png';
-import b5 from '../assets/b5.png';
 import karaage from '../assets/karaage.png'
 
 export function About() {
@@ -8,7 +5,7 @@ export function About() {
     <div className="h-full w-full flex items-center justify-center">
       <img 
         src={karaage} 
-        alt="To Love-Ru Ankuru" 
+        alt="唐揚げ" 
         className="max-w-full max-h-full object-contain"
       />
       {/* <div className="flex-1 flex items-center justify-center">
