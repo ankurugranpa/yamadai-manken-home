@@ -51,9 +51,9 @@ export function Bookshelf() {
   const handleBookSelect = (bookId: string) => {
     // 最初のページ（page/0 = 027.png）から開始
     if (bookId === 'CCV_vol35') {
-      window.location.href = `${import.meta.env.BASE_URL}book/${bookId}/page/0`;
+      window.location.href = `${import.meta.env.BASE_URL}books/${bookId}/page/0`;
     } else {
-      window.location.href = `${import.meta.env.BASE_URL}book/${bookId}`;
+      window.location.href = `${import.meta.env.BASE_URL}books/${bookId}`;
     }
   };
 
