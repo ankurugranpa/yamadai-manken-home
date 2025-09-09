@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import HeaderImg from "../assets/edo-heater-noword.png";
 
 export function Header() {
 
@@ -7,7 +8,7 @@ export function Header() {
       {/* Background Image */}
       {/* src="/src/assets/edo.jpeg"  */}
       <img 
-        src="/src/assets/edo-heater-noword.png" 
+        src={HeaderImg}
         alt="Header background"
         className="w-full h-auto block"
         style={{ height: '100%', width: '100%', objectFit: 'cover' }}
