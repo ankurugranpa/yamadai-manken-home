@@ -28,7 +28,7 @@ export function Bookshelf() {
               return {
                 id: bookId,
                 title: data.book_title,
-                cover: `/books/${bookId}/${coverItem.file_name}`
+                cover: `${import.meta.env.BASE_URL}books/${bookId}/${coverItem.file_name}`
               };
             } catch (error) {
               console.error(`Error loading book ${bookId}:`, error);
@@ -51,9 +51,9 @@ export function Bookshelf() {
   const handleBookSelect = (bookId: string) => {
     // 最初のページ（page/0 = 027.png）から開始
     if (bookId === 'CCV_vol35') {
-      window.location.href = `/book/${bookId}/page/0`;
+      window.location.href = `${import.meta.env.BASE_URL}book/${bookId}/page/0`;
     } else {
-      window.location.href = `/book/${bookId}`;
+      window.location.href = `${import.meta.env.BASE_URL}book/${bookId}`;
     }
   };
 
@@ -83,7 +83,6 @@ export function Bookshelf() {
                 className="w-full h-48 object-cover"
                 onError={(e) => {
                   console.error(`Cover image error: ${book.cover}`);
-                  e.currentTarget.src = '/src/assets/react.svg';
                 }}
               />
               <div className="p-4">
