@@ -100,12 +100,8 @@ export function Root() {
             element: <BookPage bookId="CCV_vol35" item={page} />
         })).reverse(); // ルート順序を逆にしてFooterの進む/戻るを正しくする
         
-        // メニューではmenu.jsonの項目のみを表示
-        navigationPages = CCV_vol35_menu_pages.map((page) => ({ 
-            // ファイル名から正しいページ番号を計算
-            path: `/book/CCV_vol35/page/${27 - CCV_vol35_all_pages.findIndex(p => p.file_name === page.file_name)}`, 
-            title: page.title 
-        }));
+        // Footerの進む・戻るボタンで全ページを1ページずつ遷移するため、全ページをnavigationPagesに含める
+        navigationPages = activeRoutes.map(({ path, title }) => ({ path, title }));
     } else if (currentPath.startsWith('/book/') && !currentPath.startsWith('/book/1') && !currentPath.startsWith('/book/2')) {
         // 他の動的本（将来の拡張用）
         const bookId = currentPath.split('/book/')[1];
