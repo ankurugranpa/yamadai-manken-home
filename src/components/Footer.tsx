@@ -7,7 +7,7 @@ import ArrowForwardIcon from '../assets/ui/arrow_forward_ios_24dp_1F1F1F_FILL0_w
 import MenuIcon from '../assets/ui/menu_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg';
 import { MenuDrawer } from './MenuDrawer'
 import { SnsDrawer } from './SnsDrawer'
-import { MessageCircleMore } from 'lucide-react';
+import { MessageCircleMore, BookOpen } from 'lucide-react';
 import '../styles/footer-buttons.css';
 
 interface FooterProps {
@@ -34,6 +34,7 @@ export function Footer({ pages }: FooterProps) {
     setIsMenuOpen(!isMenuOpen);
   };
   
+  const isBookPage = location.pathname.startsWith('/book/');
   const currentIndex = pages.findIndex(page => page.path === location.pathname);
   const nextPage = currentIndex < pages.length - 1 ? pages[currentIndex + 1] : null;
   const prevPage = currentIndex > 0 ? pages[currentIndex - 1] : null;
@@ -59,16 +60,23 @@ export function Footer({ pages }: FooterProps) {
           )}
         </div>
 
-        {/* SNSボタン */}
+        {/* SNSボタン または 本棚に戻るボタン */}
         <div className="flex-1 flex justify-center">
-          <SnsDrawer 
-            triggerButton={
-              <button className={FOOTER_BUTTON_STYLES.button}>
-                <MessageCircleMore className="h-6 w-6 text-neutral-50" />
-                <div className={FOOTER_BUTTON_STYLES.text}>SNS</div>
-              </button>
-            }
-          />
+          {isBookPage ? (
+            <Link to="/home/bookshelf" className={FOOTER_BUTTON_STYLES.button}>
+              <BookOpen className="h-6 w-6 text-neutral-50" />
+              <div className={FOOTER_BUTTON_STYLES.text}>本棚に戻る</div>
+            </Link>
+          ) : (
+            <SnsDrawer 
+              triggerButton={
+                <button className={FOOTER_BUTTON_STYLES.button}>
+                  <MessageCircleMore className="h-6 w-6 text-neutral-50" />
+                  <div className={FOOTER_BUTTON_STYLES.text}>SNS</div>
+                </button>
+              }
+            />
+          )}
         </div>
 
         {/* メニューボタン */}
