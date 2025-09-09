@@ -35,7 +35,7 @@ export function MenuDrawer({ pages = [], triggerButton }: MenuDrawerProps) {
         </DrawerHeader>
         
         <div className="px-4 pb-4 max-h-96 overflow-y-auto">
-          {pages.slice().reverse().map((page, index) => (
+          {pages.map((page, index) => (
             <DrawerClose key={page.path} asChild>
               <Link
                 to={page.path}
