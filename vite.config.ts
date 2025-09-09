@@ -5,7 +5,7 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: 'yamadai-manken-home',
+  base: '/yamadai-manken-home/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
