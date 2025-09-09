@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export function Bookshelf() {
+  const navigate = useNavigate();
   const [books, setBooks] = useState<{ id: string; title: string; cover: string; }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,9 +53,9 @@ export function Bookshelf() {
   const handleBookSelect = (bookId: string) => {
     // 最初のページ（page/0 = 027.png）から開始
     if (bookId === 'CCV_vol35') {
-      window.location.href = `${import.meta.env.BASE_URL}books/${bookId}/page/0`;
+      navigate(`/book/${bookId}/page/0`);
     } else {
-      window.location.href = `${import.meta.env.BASE_URL}books/${bookId}`;
+      navigate(`/book/${bookId}`);
     }
   };
 
@@ -86,7 +88,7 @@ export function Bookshelf() {
                 }}
               />
               <div className="p-4">
-                <h3 className="font-semibold text-sm text-center">{book.title}</h3>
+                <h3 className="text-sm font-medium text-gray-900 truncate">{book.title}</h3>
               </div>
             </div>
           </div>

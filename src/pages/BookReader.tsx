@@ -6,7 +6,6 @@ interface BookItem {
   file_name: string;
 }
 
-
 export function BookReader() {
   const { bookId, pageNumber } = useParams<{ bookId: string; pageNumber: string }>();
   
@@ -21,12 +20,11 @@ export function BookReader() {
   return (
     <div className="h-full w-full flex items-center justify-center">
       <img 
-        src={`/books/${bookId}/${fileName}`}
+        src={`${import.meta.env.BASE_URL}books/${bookId}/${fileName}`}
         alt={`${bookId} page ${pageNumber}`}
         className="max-w-full max-h-full object-contain"
-        onError={(e) => {
-          console.error(`画像読み込みエラー: /books/${bookId}/${fileName}`);
-          e.currentTarget.src = '/src/assets/react.svg';
+        onError={() => {
+          console.error(`画像読み込みエラー: ${import.meta.env.BASE_URL}books/${bookId}/${fileName}`);
         }}
       />
     </div>
@@ -42,12 +40,11 @@ export function BookPage({ bookId, item }: BookPageProps) {
   return (
     <div className="h-full w-full flex items-center justify-center">
       <img 
-        src={`/books/${bookId}/${item.file_name}`}
+        src={`${import.meta.env.BASE_URL}books/${bookId}/${item.file_name}`}
         alt={`${item.title} by ${item.author}`}
         className="max-w-full max-h-full object-contain"
-        onError={(e) => {
-          console.error(`画像読み込みエラー: /books/${bookId}/${item.file_name}`);
-          e.currentTarget.src = '/src/assets/react.svg';
+        onError={() => {
+          console.error(`画像読み込みエラー: ${import.meta.env.BASE_URL}books/${bookId}/${item.file_name}`);
         }}
       />
     </div>
