@@ -12,6 +12,7 @@ import '../styles/footer-buttons.css';
 
 interface FooterProps {
   pages: PageInfo[];
+  menuPages?: PageInfo[];
 }
 
 // Footer ボタンの共通スタイル定数
@@ -26,7 +27,7 @@ const FOOTER_BUTTON_STYLES = {
   textDisabled: "text-xs text-neutral-200" // 無効時のテキスト（neutral-200）
 };
 
-export function Footer({ pages }: FooterProps) {
+export function Footer({ pages, menuPages }: FooterProps) {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -35,7 +36,10 @@ export function Footer({ pages }: FooterProps) {
   };
   
   const isBookPage = location.pathname.startsWith('/book/');
-  const currentIndex = pages.findIndex(page => page.path === location.pathname);
+  
+  // "/" パスの場合は "/home" として正規化
+  const normalizedCurrentPath = location.pathname === '/' ? '/home' : location.pathname;
+  const currentIndex = pages.findIndex(page => page.path === normalizedCurrentPath);
   
   // ループ機能の判定（book以外はループ可能）
   const canLoop = !isBookPage;
@@ -101,7 +105,7 @@ export function Footer({ pages }: FooterProps) {
         {/* メニューボタン */}
         <div className="flex-1 flex justify-center">
           <MenuDrawer 
-            pages={pages} 
+            pages={menuPages || pages} 
             triggerButton={
               <button className={FOOTER_BUTTON_STYLES.button}>
                 <img src={MenuIcon} alt="メニュー" className={FOOTER_BUTTON_STYLES.iconInverted} />

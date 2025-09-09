@@ -100,11 +100,8 @@ export function Root() {
             element: <BookPage bookId="CCV_vol35" item={page} />
         })).reverse(); // ルート順序を逆にしてFooterの進む/戻るを正しくする
         
-        // メニューにはmenu.jsonで定義されたページのみを表示
-        navigationPages = CCV_vol35_menu_pages.map((page, index) => ({
-            path: `/book/CCV_vol35/page/${27 - CCV_vol35_all_pages.findIndex(p => p.file_name === page.file_name)}`,
-            title: page.title
-        }));
+        // Footerには全ページを渡す（連続したページ遷移のため）
+        navigationPages = activeRoutes.map(({ path, title }) => ({ path, title }));
     } else if (currentPath.startsWith('/book/') && !currentPath.startsWith('/book/1') && !currentPath.startsWith('/book/2')) {
         // 他の動的本（将来の拡張用）
         const bookId = currentPath.split('/book/')[1];
@@ -117,6 +114,15 @@ export function Root() {
 
     const routes = activeRoutes.map(({ path, element }) => ({ path, element }));
 
+    // メニュー用のページリストを決定
+    let menuPages = navigationPages;
+    if (currentPath.startsWith('/book/CCV_vol35')) {
+        menuPages = CCV_vol35_menu_pages.map((page, index) => ({
+            path: `/book/CCV_vol35/page/${27 - CCV_vol35_all_pages.findIndex(p => p.file_name === page.file_name)}`,
+            title: page.title
+        }));
+    }
+
     return (
         <div 
             className="flex flex-col" 
@@ -126,13 +132,13 @@ export function Root() {
                 overscrollBehavior: 'none'
             }}
         >
-            <Header pages={navigationPages} />
+            <Header />
             <main className="flex-1 overflow-hidden"
                 style={{ touchAction: 'pan-x pinch-zoom' }}
             >
                 <CarouselRouter routes={routes} />
             </main>
-            <Footer pages={navigationPages} />
+            <Footer pages={navigationPages} menuPages={menuPages} />
         </div>
     );
 }
