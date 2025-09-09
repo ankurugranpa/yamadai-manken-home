@@ -17,6 +17,9 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
   const [api, setApi] = useState<CarouselApi>(); // Carouselの制御API
   const [currentIndex, setCurrentIndex] = useState(0); // 現在表示中のスライドインデックス
   
+  // booksページかどうかを判定
+  const isBooksPage = location.pathname.startsWith('/book/');
+  
   // URLからスライドのインデックスを計算する関数
   const getCurrentIndex = () => {
     const currentRoute = routes.findIndex(route => route.path === location.pathname);
@@ -57,7 +60,7 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
   }, [api, currentIndex, navigate, routes]);
 
   return (
-    <div className="h-full w-full overflow-hidden">
+    <div className="h-full w-full overflow-hidden" dir={isBooksPage ? "rtl" : "ltr"}>
       <Carousel
         setApi={setApi}
         className="h-full w-full"
@@ -66,12 +69,13 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
           loop: false,
           skipSnaps: false,
           dragFree: false,
+          direction: isBooksPage ? 'rtl' : 'ltr',
         }}
       >
         <CarouselContent className="h-full">
           {routes.map((route, index) => (
-            <CarouselItem key={route.path} className="h-full w-full flex-shrink-0 pl-0">
-              <div className="h-full w-full p-4 sm:p-6 lg:p-8">
+            <CarouselItem key={route.path} className="basis-full p-0 h-full">
+              <div className="h-full w-full" dir="ltr">
                 {route.element}
               </div>
             </CarouselItem>
