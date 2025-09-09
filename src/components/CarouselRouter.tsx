@@ -66,7 +66,7 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
         className="h-full w-full"
         opts={{
           align: 'start',
-          loop: false,
+          loop: !isBooksPage,
           skipSnaps: false,
           dragFree: false,
           direction: 'rtl',
