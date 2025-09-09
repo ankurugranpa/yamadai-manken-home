@@ -60,7 +60,7 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
   }, [api, currentIndex, navigate, routes]);
 
   return (
-    <div className="h-full w-full overflow-hidden" dir={isBooksPage ? "rtl" : "ltr"}>
+    <div className="h-full w-full overflow-hidden" dir="rtl">
       <Carousel
         setApi={setApi}
         className="h-full w-full"
@@ -69,7 +69,7 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
           loop: false,
           skipSnaps: false,
           dragFree: false,
-          direction: isBooksPage ? 'rtl' : 'ltr',
+          direction: 'rtl',
         }}
       >
         <CarouselContent className="h-full">

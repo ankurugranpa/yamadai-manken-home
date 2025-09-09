@@ -73,9 +73,9 @@ export function Root() {
         // { path: '/entry', title: '見学・加入', element: <Entry /> },
         // { path: '/activity', title: '活動内容', element: <Activity /> },
         // { path: '/about2', title: '漫研について', element: <About2 /> },
-        { path: '/home/bookshelf', title: '本棚', element: <Bookshelf /> },
+        { path: '/home', title: '表紙', element: <Home /> },
         { path: '/home/about', title: 'About', element: <About /> },
-        { path: '/home', title: '表紙', element: <Home /> }
+        { path: '/home/bookshelf', title: '本棚', element: <Bookshelf /> }
     ];
 
 
