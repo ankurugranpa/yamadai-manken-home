@@ -36,8 +36,27 @@ export function Footer({ pages }: FooterProps) {
   
   const isBookPage = location.pathname.startsWith('/book/');
   const currentIndex = pages.findIndex(page => page.path === location.pathname);
-  const nextPage = currentIndex < pages.length - 1 ? pages[currentIndex + 1] : null;
-  const prevPage = currentIndex > 0 ? pages[currentIndex - 1] : null;
+  
+  // ループ機能の判定（book以外はループ可能）
+  const canLoop = !isBookPage;
+  
+  // 次のページと前のページの計算（ループ対応）
+  let nextPage = null;
+  let prevPage = null;
+  
+  if (currentIndex >= 0) {
+    if (currentIndex < pages.length - 1) {
+      nextPage = pages[currentIndex + 1];
+    } else if (canLoop && pages.length > 1) {
+      nextPage = pages[0]; // 最後のページの場合、最初のページに戻る
+    }
+    
+    if (currentIndex > 0) {
+      prevPage = pages[currentIndex - 1];
+    } else if (canLoop && pages.length > 1) {
+      prevPage = pages[pages.length - 1]; // 最初のページの場合、最後のページに戻る
+    }
+  }
 
   return (
     <div>
