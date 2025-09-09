@@ -15,7 +15,8 @@ export function Bookshelf() {
         const bookData = await Promise.all(
           bookIds.map(async (bookId) => {
             try {
-              const response = await fetch(`/books/${bookId}/menu.json`);
+              
+              const response = await fetch(`${import.meta.env.BASE_URL}books/${bookId}/menu.json`);
               if (!response.ok) return null;
               const data = await response.json();
               
