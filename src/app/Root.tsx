@@ -100,8 +100,11 @@ export function Root() {
             element: <BookPage bookId="CCV_vol35" item={page} />
         })).reverse(); // ルート順序を逆にしてFooterの進む/戻るを正しくする
         
-        // Footerの進む・戻るボタンで全ページを1ページずつ遷移するため、全ページをnavigationPagesに含める
-        navigationPages = activeRoutes.map(({ path, title }) => ({ path, title }));
+        // メニューにはmenu.jsonで定義されたページのみを表示
+        navigationPages = CCV_vol35_menu_pages.map((page, index) => ({
+            path: `/book/CCV_vol35/page/${27 - CCV_vol35_all_pages.findIndex(p => p.file_name === page.file_name)}`,
+            title: page.title
+        }));
     } else if (currentPath.startsWith('/book/') && !currentPath.startsWith('/book/1') && !currentPath.startsWith('/book/2')) {
         // 他の動的本（将来の拡張用）
         const bookId = currentPath.split('/book/')[1];
