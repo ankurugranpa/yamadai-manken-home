@@ -81,7 +81,7 @@ export function Bookshelf() {
                 src={book.cover} 
                 alt={book.title}
                 className="w-full h-48 object-cover"
-                onError={(e) => {
+                onError={() => {
                   console.error(`Cover image error: ${book.cover}`);
                 }}
               />
