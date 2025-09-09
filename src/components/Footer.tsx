@@ -35,8 +35,8 @@ export function Footer({ pages }: FooterProps) {
   };
   
   const currentIndex = pages.findIndex(page => page.path === location.pathname);
-  const nextPage = currentIndex > 0 ? pages[currentIndex - 1] : null;
-  const prevPage = currentIndex < pages.length - 1 ? pages[currentIndex + 1] : null;
+  const nextPage = currentIndex < pages.length - 1 ? pages[currentIndex + 1] : null;
+  const prevPage = currentIndex > 0 ? pages[currentIndex - 1] : null;
 
   return (
     <div>
