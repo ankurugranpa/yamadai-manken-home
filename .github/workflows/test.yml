@@ -1,0 +1,37 @@
+name: テスト実行
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - name: リポジトリをチェックアウト
+      uses: actions/checkout@v4
+
+    - name: Node.js ${{ matrix.node-version }} をセットアップ
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: 依存関係をインストール
+      run: npm ci
+
+    - name: リントチェック実行
+      run: npm run lint
+
+    - name: テスト実行
+      run: npm test
+
+    - name: ビルドテスト
+      run: npm run build
