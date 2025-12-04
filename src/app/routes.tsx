@@ -33,13 +33,27 @@ export const booksMenus: Record<string, PageData[]> = {
 };
 
 /**
+ * Calculate the maximum page number from menu data
+ * @param menuPages - Array of menu page data
+ * @returns The highest page number found
+ */
+function getMaxPageNumber(menuPages: PageData[]): number {
+  return Math.max(
+    ...menuPages.map(page => {
+      const match = page.file_name.match(/(\d+)\.png$/);
+      return match ? parseInt(match[1], 10) : 0;
+    })
+  );
+}
+
+/**
  * Generate all pages data for a book
  * @param menuPages - Array of menu page data
  * @returns Array of all pages with metadata
  */
 function generateAllPagesData(menuPages: PageData[]): PageData[] {
   const allPages: PageData[] = [];
-  const maxPageNumber = 27; // CCV_vol35 has pages from 000.png to 027.png
+  const maxPageNumber = getMaxPageNumber(menuPages);
   
   for (let i = maxPageNumber; i >= 0; i--) {
     const fileName = `${i.toString().padStart(3, '0')}.png`;
@@ -62,9 +76,9 @@ function generateAllPagesData(menuPages: PageData[]): PageData[] {
  */
 export function generateBookRoutes(bookId: string, menuPages: PageData[]): RoutePageInfo[] {
   const allPages = generateAllPagesData(menuPages);
-  const maxPageNumber = 27;
+  const maxPageNumber = getMaxPageNumber(menuPages);
 
-  // Create routes mapping: page/27 = 027.png, page/26 = 026.png, ..., page/0 = 000.png
+  // Create routes mapping: page/N = NNN.png (e.g., page/27 = 027.png)
   const routes = allPages.map((page, index) => ({
     path: `/book/${bookId}/page/${maxPageNumber - index}`,
     title: page.title,
@@ -82,7 +96,7 @@ export function generateBookRoutes(bookId: string, menuPages: PageData[]): Route
  */
 export function getBookMenuPages(bookId: string, menuPages: PageData[]) {
   const allPages = generateAllPagesData(menuPages);
-  const maxPageNumber = 27;
+  const maxPageNumber = getMaxPageNumber(menuPages);
   
   return menuPages.map((page) => {
     const pageIndex = allPages.findIndex(p => p.file_name === page.file_name);
