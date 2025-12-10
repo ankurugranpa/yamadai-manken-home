@@ -5,7 +5,19 @@ import { BookPage } from '../pages/BookReader';
 import type { RoutePageInfo } from '../types/navigation';
 
 // Import menu data for each book
-import CCV_vol35_menu from '../data/CCV_vol35/menu.json';
+// data配下の各bookフォルダからmenu.jsonを自動収集
+const menuModules = import.meta.glob('../data/*/menu.json', { eager: true }) as Record<string, { default: PageData[] }>;
+
+// パスからbookIdを抽出し、Recordにまとめる
+export const booksMenus: Record<string, PageData[]> = Object.fromEntries(
+  Object.entries(menuModules)
+    .map(([path, mod]) => {
+      const match = path.match(/\.\.\/data\/([^/]+)\/menu\.json$/);
+      const bookId = match?.[1];
+      return bookId ? [bookId, mod.default] : null;
+    })
+    .filter((entry): entry is [string, PageData[]] => entry !== null)
+);
 
 /**
  * PageData interface representing a single page in a book
@@ -28,9 +40,7 @@ export const routePages: RoutePageInfo[] = [
 /**
  * Book menus mapping bookId to menu items
  */
-export const booksMenus: Record<string, PageData[]> = {
-  CCV_vol35: CCV_vol35_menu as PageData[]
-};
+// booksMenusは上記globで自動生成済み
 
 /**
  * Calculate the maximum page number from menu data
