@@ -14,18 +14,12 @@ export function Root() {
     let activeRoutes: RoutePageInfo[];
     let navigationPages: PageInfo[];
     
-    if (currentPath.startsWith('/book/CCV_vol35')) {
-        // Generate CCV_vol35 routes using centralized menu data
-        const menuData = booksMenus['CCV_vol35'];
-        activeRoutes = generateBookRoutes('CCV_vol35', menuData);
-        
-        // Footerには全ページを渡す（連続したページ遷移のため）
-        navigationPages = activeRoutes.map(({ path, title }) => ({ path, title }));
-    } else if (currentPath.startsWith('/book/') && !currentPath.startsWith('/book/1') && !currentPath.startsWith('/book/2')) {
-        // 他の動的本（将来の拡張用）
-        const bookId = currentPath.split('/book/')[1].split('/')[0];
+    const bookMatch = currentPath.match(/^\/book\/([^/]+)/);
+    const bookId = bookMatch ? bookMatch[1] : null;
+
+    if (bookId) {
         const menuData = booksMenus[bookId];
-        
+
         if (menuData) {
             activeRoutes = generateBookRoutes(bookId, menuData);
             navigationPages = activeRoutes.map(({ path, title }) => ({ path, title }));
