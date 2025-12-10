@@ -18,7 +18,7 @@ export function BookReader() {
   const fileName = `${paddedPageNumber}.png`;
 
   return (
-    <div className="h-full w-full flex items-center justify-center">
+    <div className="h-full w-full flex items-center justify-center bg-neutral-900">
       <img 
         src={`${import.meta.env.BASE_URL}books/${bookId}/${fileName}`}
         alt={`${bookId} page ${pageNumber}`}
@@ -38,7 +38,7 @@ interface BookPageProps {
 
 export function BookPage({ bookId, item }: BookPageProps) {
   return (
-    <div className="h-full w-full flex items-center justify-center">
+    <div className="h-full w-full flex items-center justify-center bg-neutral-900">
       <img 
         src={`${import.meta.env.BASE_URL}books/${bookId}/${item.file_name}`}
         alt={`${item.title} by ${item.author}`}
