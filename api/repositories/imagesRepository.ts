@@ -46,3 +46,21 @@ export class CloudflareImagesRepository implements ImagesRepository {
     }
   }
 }
+
+export class MockImagesRepository implements ImagesRepository {
+  async createDirectUploadUrls(count: number): Promise<UploadUrlItem[]> {
+    const now = Date.now();
+    return Array.from({ length: count }).map((_, i) => {
+      const id = `mock-${now}-${i}`;
+      return {
+        id,
+        uploadURL: `https://example.com/upload/${id}`,
+        expiresAt: new Date(now + 10 * 60 * 1000).toISOString(),
+      };
+    });
+  }
+
+  async deleteImage(_imageId: string): Promise<void> {
+    // no-op for mock
+  }
+}
