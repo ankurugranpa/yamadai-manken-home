@@ -1,0 +1,14 @@
+name = "images-api"
+main = "api/server.ts"
+compatibility_date = "2024-09-01"
+
+kv_namespaces = [
+  { binding = "KV_WORKS", id = "9fee36ec201a435c8f9804233974f00e" }
+]
+
+[vars]
+CF_ACCOUNT_ID = "dummy"
+CF_API_TOKEN = "dummy"
+CF_IMAGES_ACCOUNT_HASH = "dummy"
+# ローカルモックを使うときは true に設定し、実アップロードを行わない
+MOCK_IMAGES = "true"
