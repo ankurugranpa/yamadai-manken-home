@@ -21,11 +21,4 @@ export interface EnvBindings {
   CF_API_TOKEN: string;
   CF_IMAGES_ACCOUNT_HASH: string;
   KV_WORKS: KVNamespace;
-  MOCK_IMAGES?: string;
-  GOOGLE_CLIENT_ID: string;
-  GOOGLE_CLIENT_SECRET: string;
-  GOOGLE_REDIRECT_URI: string;
-  SESSION_SECRET: string;
-  ALLOWED_EMAILS?: string;
-  ALLOWED_DOMAIN?: string;
 }
