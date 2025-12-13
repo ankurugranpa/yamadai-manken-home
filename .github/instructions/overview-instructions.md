@@ -7,6 +7,22 @@
 - **グループ数**: 5-10個（年度別、役職別、OB/OG会など）
 - **想定アクセス**: 月間数千PV程度（主に部員・OB/OG）
 
+# ユーザーロール設計
+
+## 権限フラグ
+- **is_admin**: 管理者権限（TRUE/FALSE）
+  - 全作品閲覧可能、管理画面アクセス可能
+  - 他のロールと重複可能（Admin+Member、Admin+OB_OGなど）
+
+## 所属ステータス（排他的、1ユーザー1ステータス）
+- **member**: 現役部員
+- **ob_og**: OB/OG（卒業生）
+- **guest**: ゲストユーザー
+
+## 重複ルール
+- ✅ 可能: Admin + Member、Admin + OB_OG、Admin + Guest
+- ❌ 不可: Member + OB_OG、Member + Guest、OB_OG + Guest
+
 # データベース設計
 - **スキーマ定義**: `db/migrations/0001_initial_schema.sql`
 - **データベース**: Cloudflare D1
@@ -56,10 +72,11 @@
 
 ## 管理者向けページの設計
 - pc向けの操作を前提としたページ設計
-- 管理者ページは管理者としてログインが必須
+- 管理者ページは管理者としてログインが必須（is_admin=TRUE）
 - adminようの管理apiは必ず管理者ユーザーしか打てない
-- role：その人の身分（1つ）
-- group：所属している集まり（複数）
+- is_admin：管理者権限フラグ（TRUE/FALSE、他ロールと重複可能）
+- member_type：所属ステータス（member/ob_og/guest、排他的）
+- group：所属している集まり（複数所属可能）
 - permission：誰が見れるかのルール
 - 管理者は閲覧できない物は存在しない
 

@@ -30,22 +30,24 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- ============================================================
--- ユーザーロールテーブル（1ユーザー = 1ロール）
+-- ユーザーロールテーブル（1ユーザー = 1所属ステータス + 管理者フラグ）
 -- ============================================================
--- roleはその人の「身分」を表す（admin, member, ob, og, guest）
--- 1ユーザーは必ず1つのroleを持つ
+-- is_adminは管理者権限フラグ（他のロールと重複可能）
+-- member_typeは所属ステータス（member, ob_og, guest のいずれか1つ）
+-- 重複ルール:
+--   ✅ 可能: Admin+Member, Admin+OB_OG, Admin+Guest
+--   ❌ 不可: Member+OB_OG, Member+Guest, OB_OG+Guest
 CREATE TABLE IF NOT EXISTS user_roles (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
-  role TEXT CHECK(role IN ('admin', 'member', 'ob', 'og', 'guest')) NOT NULL,
-  -- admin: 管理者（全作品閲覧可能）
+  is_admin BOOLEAN DEFAULT FALSE, -- 管理者権限（全作品閲覧可能、管理画面アクセス可能）
+  member_type TEXT CHECK(member_type IN ('member', 'ob_og', 'guest')) NOT NULL,
   -- member: 現役部員
-  -- ob: OB
-  -- og: OG
+  -- ob_og: OB/OG（卒業生）
   -- guest: ゲスト（公開作品のみ閲覧可能）
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  UNIQUE(user_id) -- 1ユーザーは1つのroleのみ持つ制約
+  UNIQUE(user_id) -- 1ユーザーは1つの所属ステータスのみ持つ（is_adminは独立）
 );
 
 -- ============================================================
