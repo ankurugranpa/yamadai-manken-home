@@ -13,22 +13,30 @@
 
 ## 認証方式
 
-### JWT認証（ベストプラクティス準拠）
+### Auth.js認証（標準フロー）
+
+**認証フロー**:
+1. ユーザーが「Googleでログイン」をクリック
+2. `GET /api/auth/signin/google` → Googleの認証画面へリダイレクト
+3. Googleで認証後、`/api/auth/callback/google` にコールバック
+4. サーバー側で認可コードを検証、ユーザー情報取得
+5. データベースでユーザー存在確認
+   - 既存ユーザー → セッション作成、JWTトークン発行
+   - 新規ユーザー → 招待トークン確認画面へリダイレクト
+6. クライアントにJWTトークンを返却
+
+**JWT認証**:
 - **Authorization Header**: `Authorization: Bearer <JWT_TOKEN>`
-- **JWT公開鍵**: Cloudflare KVに保存
-- **アクセストークン有効期限**: 1時間（短期間で安全性向上）
+- **アクセストークン有効期限**: 1時間
 - **リフレッシュトークン有効期限**: 7日間
-- **リフレッシュトークンローテーション**: 使用後に新しいトークンを発行（セキュリティ向上）
 - **トークン無効化**: Cloudflare KVでブラックリスト管理
   - ログアウト時に`jti`（JWT ID）をKVに保存
-  - TTL設定でトークン有効期限切れ時に自動削除
-  - 無料枠: 100,000 read/日、1,000 write/日（月間数千PV程度なら十分）
   - 短い有効期限でKV書き込みを最小化
 
 ### ロールベース認証
 1. **未認証ユーザー**: 公開APIのみアクセス可能
-2. **認証済みユーザー**: ログイン後、自分の情報と権限に応じた作品へアクセス可能
-3. **管理者** (`is_admin=TRUE`): すべてのAPIにアクセス可能
+2. **認証済みユーザー**: 自分の情報と権限に応じた作品へアクセス可能
+3. **管理者** (`is_admin=TRUE`): すべてのAPIにアクセス可能（ミドルウェアで検証）
 
 ---
 
@@ -45,10 +53,12 @@
 ### 2. 認証API
 | メソッド | エンドポイント | 説明 |
 |---------|-------------|------|
+| POST | `/auth/register` | 招待トークンを使った新規登録 |
 | POST | `/auth/login` | Googleログイン |
 | POST | `/auth/refresh` | トークンリフレッシュ |
 | POST | `/auth/logout` | ログアウト |
 | GET | `/auth/me` | 現在のユーザー情報取得 |
+| GET | `/auth/verify-invite` | 招待トークン検証 |
 
 ### 3. 認証済みユーザーAPI（要認証）
 | メソッド | エンドポイント | 説明 |
@@ -61,6 +71,8 @@
 | PATCH | `/users/me` | 自分の情報更新 |
 
 ### 4. 管理者API（要管理者権限）
+
+**管理者権限チェック**: すべての管理者APIは、ミドルウェアでJWTペイロードの`isAdmin`フィールドを検証します。権限がない場合は`403 Forbidden`を返します。
 
 #### 作品管理
 | メソッド | エンドポイント | 説明 |
@@ -158,7 +170,7 @@
       "id": "01JFABCDEFGH123456789",
       "title": "春の物語",
       "description": "春をテーマにした作品",
-      "author": "AO",
+      "authors": ["AO"],
       "year": 2024,
       "coverImageId": "cloudflare-images-id-1",
       "pageCount": 24,
@@ -188,7 +200,7 @@
   "id": "01JFABCDEFGH123456789",
   "title": "春の物語",
   "description": "春をテーマにした作品",
-  "author": "AO",
+  "authors": ["AO"],
   "year": 2024,
   "visibility": "public",
   "coverImageId": "cloudflare-images-id-1",
@@ -206,6 +218,15 @@
 }
 ```
 
+または
+
+```json
+{
+  "error": "FORBIDDEN",
+  "message": "この作品を閲覧する権限がありません"
+}
+```
+
 #### `GET /public/works/:workId/pages`
 公開作品のページ一覧取得
 
@@ -213,6 +234,10 @@
 
 **パスパラメータ**
 - `workId` (string): 作品ID
+
+**クエリパラメータ**
+- `page` (number, optional): ページ番号（デフォルト: 1）
+- `limit` (number, optional): 1ページあたりの件数（デフォルト: 20、最大: 100）
 
 **レスポンス**
 ```json
@@ -232,7 +257,13 @@
       "altText": "1ページ目",
       "createdAt": "2024-03-15T10:05:00Z"
     }
-  ]
+  ],
+  "pagination": {
+    "total": 24,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 2
+  }
 }
 ```
 
@@ -240,15 +271,72 @@
 
 ### 2. 認証API
 
-#### `POST /auth/login`
-Googleログイン
+#### `GET /auth/verify-invite`
+招待トークン検証
 
 **ステータスコード**: `200 OK`
+
+**クエリパラメータ**
+- `token` (string): 招待トークン
+- `email` (string, optional): 確認するメールアドレス（Google OAuth後に取得）
+
+**レスポンス**
+```json
+{
+  "valid": true,
+  "email": "newuser@example.com",
+  "memberType": "member",
+  "expiresAt": "2024-12-21T12:34:56Z",
+  "existingUser": false
+}
+```
+
+**既存ユーザーの場合**
+```json
+{
+  "valid": false,
+  "error": "ALREADY_REGISTERED",
+  "message": "このメールアドレスは既に登録されています",
+  "redirectUrl": "/home"
+}
+```
+
+**エラーレスポンス**（トークンが無効または期限切れ）
+```json
+{
+  "valid": false,
+  "error": "INVALID_TOKEN",
+  "message": "招待トークンが無効または期限切れです"
+}
+```
+
+**エラーレスポンス**（メールアドレス不一致）
+```json
+{
+  "valid": false,
+  "error": "EMAIL_MISMATCH",
+  "message": "招待されたメールアドレスと異なります"
+}
+```
+
+#### `POST /auth/register`
+招待トークンを使った新規登録
+
+**前提条件**: 
+1. ユーザーが既にGoogle OAuthでログイン済み（Auth.js経由）
+2. 招待トークンが検証済み（`GET /auth/verify-invite`）
+
+**ステータスコード**: `201 Created`
+
+**リクエストヘッダー**
+```
+Authorization: Bearer <TEMP_JWT_TOKEN>
+```
 
 **リクエストボディ**
 ```json
 {
-  "idToken": "google-id-token-from-oauth"
+  "inviteToken": "invite-token-abc123xyz"
 }
 ```
 
@@ -260,8 +348,8 @@ Googleログイン
   "expiresIn": 604800,
   "user": {
     "id": "01JFUSER123456789",
-    "email": "user@example.com",
-    "name": "山田太郎",
+    "email": "newuser@example.com",
+    "name": "新規ユーザー",
     "role": {
       "isAdmin": false,
       "memberType": "member"
@@ -273,10 +361,49 @@ Googleログイン
 **エラーレスポンス**
 ```json
 {
-  "error": "UNAUTHORIZED",
-  "message": "招待されていないユーザーです"
+  "error": "INVALID_TOKEN",
+  "message": "招待トークンが無効または期限切れです"
 }
 ```
+
+または
+
+```json
+{
+  "error": "EMAIL_MISMATCH",
+  "message": "招待されたメールアドレスと異なります"
+}
+```
+
+または
+
+```json
+{
+  "error": "TOKEN_EXHAUSTED",
+  "message": "この招待トークンは使用上限に達しています"
+}
+```
+
+#### `GET /api/auth/signin/google`
+Googleログイン開始
+
+**説明**: Auth.jsが提供する標準エンドポイント。Googleの認証画面へリダイレクトします。
+
+#### `GET /api/auth/callback/google`
+Googleログインコールバック
+
+**説明**: Google OAuth認証後のコールバック。Auth.jsが自動的にハンドリングします。
+
+**処理フロー**:
+1. 認可コードを検証
+2. Googleからユーザー情報取得（email, name, picture）
+3. データベースでユーザー存在確認
+   - 既存ユーザー → JWTトークン発行、ホームへリダイレクト
+   - 新規ユーザー → 招待トークン入力画面へリダイレクト
+
+**リダイレクト先**:
+- 既存ユーザー: `/home?token=<JWT_TOKEN>`
+- 新規ユーザー: `/signup/verify-invite`
 
 #### `POST /auth/refresh`
 トークンリフレッシュ
@@ -381,7 +508,7 @@ Authorization: Bearer <JWT_TOKEN>
       "id": "01JFABCDEFGH123456789",
       "title": "春の物語",
       "description": "春をテーマにした作品",
-      "author": "AO",
+      "authors": ["AO"],
       "year": 2024,
       "visibility": "public",
       "coverImageId": "cloudflare-images-id-1",
@@ -417,7 +544,7 @@ Authorization: Bearer <JWT_TOKEN>
   "id": "01JFABCDEFGH123456789",
   "title": "春の物語",
   "description": "春をテーマにした作品",
-  "author": "AO",
+  "authors": ["AO"],
   "year": 2024,
   "visibility": "limited",
   "coverImageId": "cloudflare-images-id-1",
@@ -454,6 +581,10 @@ Authorization: Bearer <JWT_TOKEN>
 **パスパラメータ**
 - `workId` (string): 作品ID
 
+**クエリパラメータ**
+- `page` (number, optional): ページ番号（デフォルト: 1）
+- `limit` (number, optional): 1ページあたりの件数（デフォルト: 20、最大: 100）
+
 **レスポンス**
 ```json
 {
@@ -466,7 +597,13 @@ Authorization: Bearer <JWT_TOKEN>
       "altText": "表紙",
       "createdAt": "2024-03-15T10:00:00Z"
     }
-  ]
+  ],
+  "pagination": {
+    "total": 24,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 2
+  }
 }
 ```
 
@@ -567,7 +704,7 @@ Authorization: Bearer <JWT_TOKEN>
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **リクエストボディ**
@@ -575,7 +712,7 @@ X-Admin-Required: true
 {
   "title": "春の物語",
   "description": "春をテーマにした作品",
-  "author": "AO",
+  "authors": ["AO"],
   "year": 2024,
   "visibility": "public",
   "coverImageId": "cloudflare-images-id-1"
@@ -588,7 +725,7 @@ X-Admin-Required: true
   "id": "01JFABCDEFGH123456789",
   "title": "春の物語",
   "description": "春をテーマにした作品",
-  "author": "AO",
+  "authors": ["AO"],
   "year": 2024,
   "visibility": "public",
   "coverImageId": "cloudflare-images-id-1",
@@ -613,7 +750,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -634,7 +771,7 @@ X-Admin-Required: true
   "id": "01JFABCDEFGH123456789",
   "title": "春の物語（改訂版）",
   "description": "更新された説明文",
-  "author": "AO",
+  "authors": ["AO"],
   "year": 2024,
   "visibility": "limited",
   "coverImageId": "cloudflare-images-id-1",
@@ -650,7 +787,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -671,6 +808,14 @@ X-Admin-Required: true
 }
 ```
 
+**エラーレスポンス**（作成者以外が削除しようとした場合）
+```json
+{
+  "error": "FORBIDDEN",
+  "message": "作品を削除する権限がありません。作成者のみが削除できます"
+}
+```
+
 ##### `POST /admin/works/:workId/pages`
 ページ一括アップロード
 
@@ -682,7 +827,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 Content-Type: multipart/form-data
 ```
 
@@ -748,13 +893,32 @@ files[]: File[] (画像ファイル、最大100枚)
 }
 ```
 
+**エラーレスポンス（全件失敗）**
+```json
+{
+  "error": "UPLOAD_FAILED",
+  "message": "すべてのファイルのアップロードに失敗しました",
+  "errors": [
+    {
+      "fileName": "001.png",
+      "message": "ファイルサイズが32MBを超えています"
+    },
+    {
+      "fileName": "002.png",
+      "message": "ファイル形式がサポートされていません"
+    }
+  ]
+}
+```
+
 ##### `DELETE /admin/works/:workId/pages/:pageId`
-ページ削除
+ページ削除（論理削除）
+
+**ステータスコード**: `200 OK`
 
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
 ```
 
 **パスパラメータ**
@@ -772,10 +936,11 @@ X-Admin-Required: true
 ##### `PATCH /admin/works/:workId/visibility`
 作品公開設定変更
 
+**ステータスコード**: `200 OK`
+
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
 ```
 
 **パスパラメータ**
@@ -813,10 +978,11 @@ X-Admin-Required: true
 ##### `GET /admin/users`
 ユーザー一覧取得
 
+**ステータスコード**: `200 OK`
+
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
 ```
 
 **クエリパラメータ**
@@ -856,7 +1022,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -893,7 +1059,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -925,7 +1091,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -953,7 +1119,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **リクエストボディ**
@@ -978,13 +1144,21 @@ X-Admin-Required: true
 }
 ```
 
+**エラーレスポンス**（メールアドレスが既に登録済み）
+```json
+{
+  "error": "ALREADY_REGISTERED",
+  "message": "このメールアドレスは既に登録されています"
+}
+```
+
 ##### `GET /admin/invites`
 招待リンク一覧取得
 
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **クエリパラメータ**
@@ -1013,7 +1187,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -1035,7 +1209,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **レスポンス**
@@ -1059,7 +1233,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **リクエストボディ**
@@ -1086,7 +1260,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -1116,7 +1290,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -1137,7 +1311,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -1173,7 +1347,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -1197,7 +1371,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -1227,7 +1401,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -1264,7 +1438,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -1288,7 +1462,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **レスポンス**
@@ -1325,7 +1499,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **クエリパラメータ**
@@ -1341,7 +1515,7 @@ X-Admin-Required: true
     {
       "id": "01JFABCDEFGH123456789",
       "title": "春の物語",
-      "author": "AO",
+      "authors": ["AO"],
       "year": 2024,
       "deletedAt": "2024-12-14T12:34:56Z",
       "deletedBy": {
@@ -1369,7 +1543,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -1396,7 +1570,7 @@ X-Admin-Required: true
 **リクエストヘッダー**
 ```
 Authorization: Bearer <JWT_TOKEN>
-X-Admin-Required: true
+
 ```
 
 **パスパラメータ**
@@ -1463,6 +1637,24 @@ Authorization: Bearer <JWT_TOKEN> (private/limited作品の場合必要)
 }
 ```
 
+または
+
+```json
+{
+  "error": "NOT_FOUND",
+  "message": "ページが見つかりません"
+}
+```
+
+または
+
+```json
+{
+  "error": "IMAGE_NOT_AVAILABLE",
+  "message": "画像がアップロードされていません"
+}
+```
+
 #### `POST /pages/image-urls`
 複数ページの署名付きURLを一括取得
 
@@ -1523,33 +1715,6 @@ https://imagedelivery.net/account-hash/image-id/thumbnail?exp=...&sig=...
 https://imagedelivery.net/account-hash/image-id/large?exp=...&sig=...
 ```
 
-#### 署名付きURL生成ロジック（サーバー側実装）
-
-```typescript
-import crypto from 'crypto';
-
-function generateSignedImageUrl(
-  imageId: string,
-  variant: string = 'public',
-  expiresIn: number = 3600
-): string {
-  const accountHash = env.CF_IMAGES_ACCOUNT_HASH;
-  const signingKey = env.CF_IMAGES_SIGNING_KEY;
-  
-  const expiry = Math.floor(Date.now() / 1000) + expiresIn;
-  const baseUrl = `https://imagedelivery.net/${accountHash}/${imageId}/${variant}`;
-  
-  // 署名を生成
-  const dataToSign = `${baseUrl}?exp=${expiry}`;
-  const signature = crypto
-    .createHmac('sha256', signingKey)
-    .update(dataToSign)
-    .digest('hex');
-  
-  return `${baseUrl}?exp=${expiry}&sig=${signature}`;
-}
-```
-
 ---
 
 ## エラーレスポンス
@@ -1582,15 +1747,39 @@ function generateSignedImageUrl(
 
 ### エラーレスポンス例
 
-**バリデーションエラー**
+**バリデーションエラー（単一フィールド）**
 ```json
 {
   "error": "VALIDATION_ERROR",
   "message": "入力値が不正です",
-  "details": {
-    "field": "year",
-    "reason": "年は1000から9999の範囲で指定してください"
-  }
+  "errors": [
+    {
+      "field": "year",
+      "message": "年は1000から9999の範囲で指定してください"
+    }
+  ]
+}
+```
+
+**バリデーションエラー（複数フィールド）**
+```json
+{
+  "error": "VALIDATION_ERROR",
+  "message": "入力値が不正です",
+  "errors": [
+    {
+      "field": "title",
+      "message": "タイトルは必須です"
+    },
+    {
+      "field": "year",
+      "message": "年は1000から9999の範囲で指定してください"
+    },
+    {
+      "field": "authors",
+      "message": "作者は1人以上指定してください"
+    }
+  ]
 }
 ```
 
@@ -1616,6 +1805,9 @@ function generateSignedImageUrl(
 ---
 
 ## レート制限
+
+### 実装方法
+Cloudflare Rate Limitingを使用（Workers無料プランでも利用可能）
 
 ### 制限値
 - **未認証ユーザー**: 100リクエスト/分
@@ -1695,8 +1887,9 @@ X-RateLimit-Reset: 1702550400
 ### ページネーション
 - デフォルト: 20件/ページ
 - 最大: 100件/ページ
+- **全APIで一貫したページネーション形式を使用**
 
-### 楽観的ロック（更新競合対策・ベストプラクティス）
+### 楽観的ロック（更新競合対策）
 
 **問題**: 複数管理者が同時に同じリソースを更新すると、後の更新で先の更新が上書きされる（Lost Update問題）
 
@@ -1765,36 +1958,6 @@ RETURNING *
 - ✅ `PATCH /admin/groups/:groupId`
 - ✅ `PATCH /admin/works/:workId/visibility`
 
-#### フロントエンド実装例
-
-```typescript
-async function updateWork(id: string, data: UpdateWorkData, version: number) {
-  try {
-    const response = await fetch(`/admin/works/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ ...data, version })
-    });
-    
-    if (response.status === 409) {
-      // 競合検出: 最新データを再取得してユーザーに通知
-      alert('他のユーザーが更新しました。最新データを取得してください');
-      const latestData = await fetchWork(id);
-      // UIに最新データを反映
-      return latestData;
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Update failed:', error);
-    throw error;
-  }
-}
-```
-
 ---
 
 ## OpenAPI仕様
@@ -1808,78 +1971,15 @@ async function updateWork(id: string, data: UpdateWorkData, version: number) {
 npm install @hono/zod-openapi zod
 ```
 
-**実装例**:
-```typescript
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-
-const app = new OpenAPIHono();
-
-// スキーマ定義
-const WorkSchema = z.object({
-  id: z.string().openapi({ example: '01JFABCDEFGH123456789' }),
-  title: z.string().openapi({ example: '春の物語' }),
-  author: z.string().openapi({ example: 'AO' }),
-  year: z.number().min(1000).max(9999).openapi({ example: 2024 }),
-  visibility: z.enum(['public', 'private', 'limited']),
-});
-
-// ルート定義
-const getPublicWorksRoute = createRoute({
-  method: 'get',
-  path: '/public/works',
-  tags: ['Public'],
-  summary: '公開作品一覧取得',
-  responses: {
-    200: {
-      description: '成功',
-      content: {
-        'application/json': {
-          schema: z.object({
-            works: z.array(WorkSchema),
-            pagination: z.object({
-              total: z.number(),
-              page: z.number(),
-              limit: z.number(),
-              totalPages: z.number(),
-            }),
-          }),
-        },
-      },
-    },
-  },
-});
-
-app.openapi(getPublicWorksRoute, async (c) => {
-  // 実装
-  return c.json({ works: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 0 } });
-});
-
-// OpenAPI JSON生成
-app.doc('/openapi.json', {
-  openapi: '3.1.0',
-  info: {
-    title: '漫画研究会ホームページ API',
-    version: 'v1',
-  },
-});
-```
-
-**Swagger UI**:
-```typescript
-import { swaggerUI } from '@hono/swagger-ui';
-
-app.get('/docs', swaggerUI({ url: '/openapi.json' }));
-```
+**生成されるURL**:
+- OpenAPI JSON: `https://api.yamadai-manken-home.pages.dev/openapi.json`
+- Swagger UI: `https://api.yamadai-manken-home.pages.dev/docs`
 
 **メリット**:
 - ✅ 型安全なバリデーション（Zod）
 - ✅ OpenAPI仕様の自動生成
 - ✅ Swagger UIで即座にテスト可能
 - ✅ フロントエンドの型定義自動生成（openapi-typescript）
-
-**生成されるURL**:
-- OpenAPI JSON: `https://api.yamadai-manken-home.pages.dev/openapi.json`
-- Swagger UI: `https://api.yamadai-manken-home.pages.dev/docs`
 
 ---
 
@@ -1908,3 +2008,64 @@ app.get('/docs', swaggerUI({ url: '/openapi.json' }));
 ### ドキュメント
 - API変更時は必ずこのドキュメントを更新
 - 新しいエンドポイント追加時はテストも同時に作成
+
+---
+
+## データベーススキーマ
+
+### テーブル一覧
+
+本プロジェクトのデータベーススキーマは、以下のマイグレーションファイルで定義されています：
+
+- `db/migrations/0001_initial_schema.sql` - 初期スキーマ（ユーザー、作品、権限管理）
+- `db/migrations/0002_add_invitations.sql` - 招待機能テーブル
+
+### invitations テーブル
+
+招待URL機能のためのテーブル。管理者が新規ユーザーを招待するためのトークンと招待情報を管理します。
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|---|------|------|
+| `id` | TEXT | PRIMARY KEY | 招待ID（UUID v7） |
+| `token` | TEXT | UNIQUE NOT NULL | 招待トークン（URL生成用） |
+| `email` | TEXT | NULL | 招待対象のメールアドレス（オプション） |
+| `member_type` | TEXT | CHECK(member_type IN ('member', 'ob_og', 'guest')) NOT NULL | 招待されるユーザーの所属タイプ |
+| `invited_by` | TEXT | NOT NULL, FK(users.id) | 招待を作成した管理者のユーザーID |
+| `used_by` | TEXT | NULL, FK(users.id) | この招待を使用したユーザーのID |
+| `used_at` | DATETIME | NULL | 招待が使用された日時 |
+| `expires_at` | DATETIME | NOT NULL | 招待の有効期限 |
+| `max_uses` | INTEGER | DEFAULT 1 | 最大使用回数 |
+| `current_uses` | INTEGER | DEFAULT 0 | 現在の使用回数 |
+| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+| `updated_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | 更新日時 |
+
+**外部キー制約**:
+- `invited_by` → `users(id)` ON DELETE RESTRICT（招待を作成した管理者の削除を禁止）
+- `used_by` → `users(id)` ON DELETE SET NULL（招待を使用したユーザーが削除された場合はNULLに設定）
+
+**インデックス**:
+- 小規模システムのため、明示的なインデックスは作成していません（必要に応じてKVキャッシュで対応）
+
+**使用フロー**:
+
+1. 管理者が `POST /admin/invites` を呼び出して招待リンクを生成
+2. 生成された `token` を含むURLをユーザーに共有（例: `https://yamadai-manken-home.pages.dev/signup?token=xxx`）
+3. ユーザーが招待URLにアクセスし、`GET /auth/verify-invite?token=xxx` でトークンを検証
+4. ユーザーがGoogleアカウントでログイン後、`POST /auth/register` で登録
+5. 登録時に `used_by` と `used_at` が更新され、`current_uses` がインクリメントされる
+6. `current_uses >= max_uses` の場合、トークンは使用不可となる
+7. `expires_at` を過ぎたトークンも使用不可となる
+
+**招待ステータスの判定**:
+- `pending`: `used_by IS NULL AND current_uses < max_uses AND expires_at > CURRENT_TIMESTAMP`
+- `used`: `current_uses >= max_uses`
+- `expired`: `expires_at <= CURRENT_TIMESTAMP`
+
+### 関連テーブル
+
+招待機能は以下の既存テーブルと連携します：
+
+- **users**: 招待を作成した管理者と、招待を使用したユーザー
+- **user_roles**: 招待時に指定された `member_type` に基づいてユーザーロールが設定される
+
+詳細なデータベーススキーマについては、`db/migrations/` ディレクトリ内のSQLファイルを参照してください。
