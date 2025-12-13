@@ -12,6 +12,10 @@
 --   - ページ数: 1,600ページ程度
 --   - グループ数: 5-10個
 -- 
+-- ID生成方式:
+--   UUID v7 (時系列ソート可能、推測困難)
+--   アプリケーション側で生成
+-- 
 -- インデックス戦略:
 --   超小規模システムのため、インデックスは作成しない
 --   データ量が少なくフルスキャンでも十分高速
@@ -87,7 +91,7 @@ CREATE TABLE IF NOT EXISTS works (
   title TEXT NOT NULL, -- 作品タイトル
   description TEXT, -- 作品説明
   author TEXT, -- 作品の作者名（例: "AO", "dd120"）※システムユーザーとは別
-  year INTEGER, -- 発行年
+  year INTEGER CHECK(year >= 1000 AND year <= 9999), -- 発行年（4桁の年のみ許可）
   visibility TEXT CHECK(visibility IN ('public', 'private', 'limited')) DEFAULT 'private',
   -- public: 一般公開（誰でも閲覧可能）
   -- private: 非公開（管理者のみ閲覧可能）
@@ -96,7 +100,8 @@ CREATE TABLE IF NOT EXISTS works (
   created_by TEXT NOT NULL, -- アップロードした管理者のユーザーID（users.id）
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES users(id)
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
+  -- ユーザー削除を禁止（作品が存在する限り削除不可）
 );
 
 -- ============================================================
@@ -107,8 +112,8 @@ CREATE TABLE IF NOT EXISTS pages (
   id TEXT PRIMARY KEY,
   work_id TEXT NOT NULL,
   page_number INTEGER NOT NULL, -- ページ順序（0始まり）
-  image_id TEXT NOT NULL, -- Cloudflare Images ID
-  file_name TEXT NOT NULL, -- 元のファイル名（例: 000.png）
+  image_id TEXT, -- Cloudflare Images ID（NULL=アップロード失敗/未完了）
+  file_name TEXT, -- 元のファイル名（例: 000.png）（NULL=アップロード失敗/未完了）
   alt_text TEXT, -- 代替テキスト（アクセシビリティ対応）
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (work_id) REFERENCES works(id) ON DELETE CASCADE,
@@ -128,3 +133,27 @@ CREATE TABLE IF NOT EXISTS work_permissions (
   FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
   UNIQUE(work_id, group_id) -- 同じ作品に同じグループの権限が重複しない
 );
+
+-- ============================================================
+-- updated_at 自動更新トリガー
+-- ============================================================
+-- users テーブル
+CREATE TRIGGER IF NOT EXISTS update_users_timestamp 
+AFTER UPDATE ON users
+BEGIN
+  UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- groups テーブル
+CREATE TRIGGER IF NOT EXISTS update_groups_timestamp 
+AFTER UPDATE ON groups
+BEGIN
+  UPDATE groups SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- works テーブル
+CREATE TRIGGER IF NOT EXISTS update_works_timestamp 
+AFTER UPDATE ON works
+BEGIN
+  UPDATE works SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
