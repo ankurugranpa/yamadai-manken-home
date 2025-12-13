@@ -2,6 +2,9 @@
 *.mcp.json
 *.serena
 
+# Copilot custom prompts (user-specific configuration)
+.copilot/
+
 # Logs
 logs
 *.log
