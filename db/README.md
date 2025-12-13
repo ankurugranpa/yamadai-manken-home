@@ -9,6 +9,7 @@
 - **データベース**: Cloudflare D1
 - **ORM/マイグレーションツール**: Wrangler CLI
 - **スキーマ定義**: `db/migrations/0001_initial_schema.sql`
+- **ID生成方式**: UUID v7（時系列ソート可能、推測困難、アプリケーション側で生成）
 
 ## システムの想定規模
 
@@ -43,22 +44,25 @@ db/
 | updated_at | DATETIME | 更新日時 |
 
 ### 2. `user_roles` - ユーザーロールテーブル
-- **説明**: ユーザーの身分（1ユーザー = 1ロール）
+- **説明**: ユーザーの所属ステータス + 管理者フラグ（1ユーザー = 1レコード）
 - **想定レコード数**: 30-100件
 
 | カラム | 型 | 説明 |
 |--------|-----|------|
 | id | TEXT | ロールID（主キー） |
 | user_id | TEXT | ユーザーID（外部キー、一意） |
-| role | TEXT | ロール（admin/member/ob/og/guest） |
+| is_admin | BOOLEAN | 管理者権限フラグ（デフォルト: FALSE） |
+| member_type | TEXT | 所属ステータス（member/ob_og/guest） |
 | created_at | DATETIME | 作成日時 |
 
-**ロールの種類**:
-- `admin`: 管理者（全作品閲覧可能）
+**所属ステータスの種類**:
 - `member`: 現役部員
-- `ob`: OB
-- `og`: OG
+- `ob_og`: OB/OG（卒業生）
 - `guest`: ゲスト（公開作品のみ閲覧可能）
+
+**管理者権限**:
+- `is_admin = TRUE`: 全作品閲覧可能、管理画面アクセス可能
+- 管理者は member_type と独立して設定可能（例: Admin+Member, Admin+OB_OG）
 
 ### 3. `groups` - グループテーブル
 - **説明**: 所属集まりの情報
@@ -98,12 +102,14 @@ db/
 | title | TEXT | 作品タイトル |
 | description | TEXT | 作品説明 |
 | author | TEXT | 作品の作者名 |
-| year | INTEGER | 発行年 |
+| year | INTEGER | 発行年（4桁の年のみ許可: 1000-9999） |
 | visibility | TEXT | 公開設定（public/private/limited） |
 | cover_image_id | TEXT | 表紙画像のCloudflare Images ID |
-| created_by | TEXT | アップロードした管理者のユーザーID（外部キー） |
+| created_by | TEXT | アップロードした管理者のユーザーID（外部キー、ON DELETE RESTRICT） |
 | created_at | DATETIME | 作成日時 |
 | updated_at | DATETIME | 更新日時 |
+
+**注意**: `created_by` は ON DELETE RESTRICT により、作品が存在する限りユーザー削除不可
 
 **公開設定の種類**:
 - `public`: 一般公開（誰でも閲覧可能）
@@ -119,10 +125,12 @@ db/
 | id | TEXT | ページID（主キー） |
 | work_id | TEXT | 作品ID（外部キー） |
 | page_number | INTEGER | ページ順序（0始まり） |
-| image_id | TEXT | Cloudflare Images ID |
-| file_name | TEXT | 元のファイル名 |
+| image_id | TEXT | Cloudflare Images ID（NULL=アップロード失敗/未完了） |
+| file_name | TEXT | 元のファイル名（NULL=アップロード失敗/未完了） |
 | alt_text | TEXT | 代替テキスト（アクセシビリティ） |
 | created_at | DATETIME | 作成日時 |
+
+**注意**: `image_id` と `file_name` は NULL 許容。アップロード失敗したページを検知できる。
 
 ### 7. `work_permissions` - 作品閲覧権限テーブル
 - **説明**: limited作品の閲覧可能グループ
@@ -179,9 +187,10 @@ wrangler d1 execute yamadai-manken-db --remote --command "SELECT name FROM sqlit
 
 ## 権限チェックの仕組み
 
-### role（身分）による制御
-- **1ユーザー = 1ロール**
-- `admin`は全作品閲覧可能
+### is_admin（管理者権限）と member_type（所属ステータス）
+- **1ユーザー = 1レコード**（`user_roles.user_id` は UNIQUE）
+- **is_admin = TRUE** → 全作品閲覧可能、管理画面アクセス可能
+- **member_type** → 所属ステータス（member / ob_og / guest）
 
 ### group（所属集まり）による制御
 - **1ユーザー = 複数グループ可能**
@@ -195,8 +204,8 @@ wrangler d1 execute yamadai-manken-db --remote --command "SELECT name FROM sqlit
    ├─ `private` → 管理者のみ閲覧可能
    └─ `limited` → 以下のチェック
 
-2. ユーザーの`role`を確認
-   └─ `admin` → 閲覧可能（特権）
+2. ユーザーの`is_admin`を確認
+   └─ `is_admin = TRUE` → 閲覧可能（特権）
 
 3. ユーザーの所属グループを確認
    └─ `work_permissions`で許可されたグループに所属 → 閲覧可能
@@ -234,6 +243,11 @@ wrangler d1 execute yamadai-manken-db --remote --command "SELECT name FROM sqlit
 
 3. **`CREATE TABLE IF NOT EXISTS` を使用**
    - 複数回実行してもエラーにならないように
+
+### トリガー
+1. **updated_at の自動更新**
+   - `users`, `groups`, `works` テーブルの更新時に `updated_at` を自動設定
+   - TRIGGER を使用して DB 側で完結
 
 ### データ設計
 1. **外部キー制約を使用**
