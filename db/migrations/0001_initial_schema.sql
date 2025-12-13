@@ -4,7 +4,8 @@
 -- ============================================================
 -- マイグレーションバージョン: 0001
 -- 作成日: 2025-12-13
--- 説明: 初期テーブル作成（users, user_roles, groups, user_groups, works, pages, work_permissions）
+-- 更新日: 2025-12-14
+-- 説明: 初期テーブル作成（users, user_roles, groups, user_groups, works, work_authors, pages, work_permissions, invitations）
 -- 
 -- システムの想定規模:
 --   - ユーザー数: 30-100人
@@ -17,9 +18,8 @@
 --   アプリケーション側で生成
 -- 
 -- インデックス戦略:
---   超小規模システムのため、インデックスは作成しない
---   データ量が少なくフルスキャンでも十分高速
---   必要に応じて将来的にKVキャッシュで対応
+--   超小規模システムだが、頻繁にアクセスされるカラムには最低限のインデックスを作成
+--   将来的なパフォーマンス問題を予防
 -- ============================================================
 
 -- ============================================================
@@ -28,7 +28,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
-  name TEXT,
+  name TEXT NOT NULL, -- OAuth認証で取得、NULL不可
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS user_roles (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
-  is_admin BOOLEAN DEFAULT FALSE, -- 管理者権限（全作品閲覧可能、管理画面アクセス可能）
+  is_admin BOOLEAN NOT NULL DEFAULT FALSE, -- 管理者権限（全作品閲覧可能、管理画面アクセス可能）
   member_type TEXT CHECK(member_type IN ('member', 'ob_og', 'guest')) NOT NULL,
   -- member: 現役部員
   -- ob_og: OB/OG（卒業生）
@@ -91,8 +91,7 @@ CREATE TABLE IF NOT EXISTS works (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL, -- 作品タイトル
   description TEXT, -- 作品説明
-  author TEXT, -- 作品の作者名（例: "AO", "dd120"）※システムユーザーとは別
-  year INTEGER CHECK(year >= 1000 AND year <= 9999), -- 発行年（4桁の年のみ許可）
+  year INTEGER CHECK(year >= 1000 AND year <= 9999), -- 発行年（4桁の年、NULL=年不明）
   visibility TEXT CHECK(visibility IN ('public', 'private', 'limited')) DEFAULT 'private',
   -- public: 一般公開（誰でも閲覧可能）
   -- private: 非公開（管理者のみ閲覧可能）
@@ -113,6 +112,7 @@ CREATE TABLE IF NOT EXISTS works (
 -- ページテーブル（1作品に複数ページ）
 -- ============================================================
 -- 各作品のページ情報を管理
+-- 論理削除: deleted_atがNULLの場合は有効、値ありの場合は削除済み
 CREATE TABLE IF NOT EXISTS pages (
   id TEXT PRIMARY KEY,
   work_id TEXT NOT NULL,
@@ -120,8 +120,11 @@ CREATE TABLE IF NOT EXISTS pages (
   image_id TEXT, -- Cloudflare Images ID（NULL=アップロード失敗/未完了）
   file_name TEXT, -- 元のファイル名（例: 000.png）（NULL=アップロード失敗/未完了）
   alt_text TEXT, -- 代替テキスト（アクセシビリティ対応）
+  deleted_at DATETIME, -- 論理削除日時（NULL=有効、値あり=削除済み）
+  deleted_by TEXT, -- 削除した管理者のユーザーID
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (work_id) REFERENCES works(id) ON DELETE CASCADE,
+  FOREIGN KEY (work_id) REFERENCES works(id) ON DELETE RESTRICT,
+  FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL,
   UNIQUE(work_id, page_number) -- 同じ作品内でページ番号が重複しない
 );
 
@@ -137,6 +140,48 @@ CREATE TABLE IF NOT EXISTS work_permissions (
   FOREIGN KEY (work_id) REFERENCES works(id) ON DELETE CASCADE,
   FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
   UNIQUE(work_id, group_id) -- 同じ作品に同じグループの権限が重複しない
+);
+
+-- ============================================================
+-- 作品作者テーブル（多対多）
+-- ============================================================
+-- 作品と作者名の多対多関係を管理（共同作品対応）
+-- 作者名はシステムユーザーとは独立した文字列として管理
+CREATE TABLE IF NOT EXISTS work_authors (
+  id TEXT PRIMARY KEY,
+  work_id TEXT NOT NULL,
+  author_name TEXT NOT NULL, -- 作者名（例: "AO", "dd120"）
+  display_order INTEGER NOT NULL DEFAULT 0, -- 表示順序（0が最初）
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (work_id) REFERENCES works(id) ON DELETE CASCADE,
+  UNIQUE(work_id, author_name) -- 同じ作品に同じ作者が重複しない
+);
+
+-- ============================================================
+-- 招待テーブル
+-- ============================================================
+-- 新規ユーザーを招待するためのトークンと招待情報を管理
+-- 関連Issue: #80
+CREATE TABLE IF NOT EXISTS invitations (
+  id TEXT PRIMARY KEY,
+  token TEXT UNIQUE NOT NULL, -- 招待トークン（URL生成用、ランダムな文字列）
+  email TEXT, -- 招待対象のメールアドレス（オプション、NULLの場合は誰でも使用可能）
+  member_type TEXT CHECK(member_type IN ('member', 'ob_og', 'guest')) NOT NULL,
+  -- member: 現役部員として招待
+  -- ob_og: OB/OGとして招待
+  -- guest: ゲストとして招待
+  invited_by TEXT NOT NULL, -- 招待を作成した管理者のユーザーID
+  used_by TEXT, -- この招待を使用したユーザーのID（NULL=未使用）
+  used_at DATETIME, -- 招待が使用された日時（NULL=未使用）
+  expires_at DATETIME NOT NULL, -- 招待の有効期限
+  max_uses INTEGER NOT NULL DEFAULT 1 CHECK(max_uses > 0), -- 最大使用回数
+  current_uses INTEGER NOT NULL DEFAULT 0 CHECK(current_uses >= 0 AND current_uses <= max_uses), -- 現在の使用回数
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (invited_by) REFERENCES users(id) ON DELETE RESTRICT,
+  -- 招待を作成した管理者の削除を禁止（招待履歴を保持）
+  FOREIGN KEY (used_by) REFERENCES users(id) ON DELETE SET NULL
+  -- 招待を使用したユーザーが削除された場合はNULLに設定
 );
 
 -- ============================================================
@@ -162,3 +207,42 @@ AFTER UPDATE ON works
 BEGIN
   UPDATE works SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
+
+-- invitations テーブル
+CREATE TRIGGER IF NOT EXISTS update_invitations_timestamp 
+AFTER UPDATE ON invitations
+BEGIN
+  UPDATE invitations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- ============================================================
+-- インデックス作成
+-- ============================================================
+-- 頻繁にアクセスされる検索条件にインデックスを追加
+
+-- works: 公開設定による絞り込み
+CREATE INDEX IF NOT EXISTS idx_works_visibility ON works(visibility) WHERE deleted_at IS NULL;
+
+-- works: 年度による絞り込み
+CREATE INDEX IF NOT EXISTS idx_works_year ON works(year) WHERE deleted_at IS NULL;
+
+-- pages: 作品IDによる検索（頻繁に使用）
+CREATE INDEX IF NOT EXISTS idx_pages_work_id ON pages(work_id) WHERE deleted_at IS NULL;
+
+-- user_groups: ユーザーIDによる検索
+CREATE INDEX IF NOT EXISTS idx_user_groups_user_id ON user_groups(user_id);
+
+-- user_groups: グループIDによる検索
+CREATE INDEX IF NOT EXISTS idx_user_groups_group_id ON user_groups(group_id);
+
+-- work_permissions: 作品IDによる検索
+CREATE INDEX IF NOT EXISTS idx_work_permissions_work_id ON work_permissions(work_id);
+
+-- work_authors: 作品IDによる検索
+CREATE INDEX IF NOT EXISTS idx_work_authors_work_id ON work_authors(work_id);
+
+-- invitations: トークンによる検索（頻繁に使用）
+CREATE INDEX IF NOT EXISTS idx_invitations_token ON invitations(token);
+
+-- invitations: 有効期限による検索
+CREATE INDEX IF NOT EXISTS idx_invitations_expires_at ON invitations(expires_at);
