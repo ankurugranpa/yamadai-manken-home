@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS groups (
   id TEXT PRIMARY KEY,
   name TEXT UNIQUE NOT NULL, -- グループ名（例: 2024年度生, 編集部, OB/OG会）
   description TEXT,
+  version INTEGER DEFAULT 1, -- 楽観的ロック用バージョン
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -98,9 +99,13 @@ CREATE TABLE IF NOT EXISTS works (
   -- limited: 限定公開（特定グループのみ閲覧可能）
   cover_image_id TEXT, -- 表紙画像のCloudflare Images ID
   created_by TEXT NOT NULL, -- アップロードした管理者のユーザーID（users.id）
+  version INTEGER DEFAULT 1, -- 楽観的ロック用バージョン
+  deleted_at DATETIME, -- 論理削除日時（NULL=有効、値あり=削除済み）
+  deleted_by TEXT, -- 削除した管理者のユーザーID
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
+  FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL
   -- ユーザー削除を禁止（作品が存在する限り削除不可）
 );
 
