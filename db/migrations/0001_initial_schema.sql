@@ -18,8 +18,7 @@
 --   アプリケーション側で生成
 -- 
 -- インデックス戦略:
---   超小規模システムだが、頻繁にアクセスされるカラムには最低限のインデックスを作成
---   将来的なパフォーマンス問題を予防
+--   超小規模システム, 身内向けの要素が大きいシステム→不要と判断
 -- ============================================================
 
 -- ============================================================
@@ -214,35 +213,3 @@ AFTER UPDATE ON invitations
 BEGIN
   UPDATE invitations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
-
--- ============================================================
--- インデックス作成
--- ============================================================
--- 頻繁にアクセスされる検索条件にインデックスを追加
-
--- works: 公開設定による絞り込み
-CREATE INDEX IF NOT EXISTS idx_works_visibility ON works(visibility) WHERE deleted_at IS NULL;
-
--- works: 年度による絞り込み
-CREATE INDEX IF NOT EXISTS idx_works_year ON works(year) WHERE deleted_at IS NULL;
-
--- pages: 作品IDによる検索（頻繁に使用）
-CREATE INDEX IF NOT EXISTS idx_pages_work_id ON pages(work_id) WHERE deleted_at IS NULL;
-
--- user_groups: ユーザーIDによる検索
-CREATE INDEX IF NOT EXISTS idx_user_groups_user_id ON user_groups(user_id);
-
--- user_groups: グループIDによる検索
-CREATE INDEX IF NOT EXISTS idx_user_groups_group_id ON user_groups(group_id);
-
--- work_permissions: 作品IDによる検索
-CREATE INDEX IF NOT EXISTS idx_work_permissions_work_id ON work_permissions(work_id);
-
--- work_authors: 作品IDによる検索
-CREATE INDEX IF NOT EXISTS idx_work_authors_work_id ON work_authors(work_id);
-
--- invitations: トークンによる検索（頻繁に使用）
-CREATE INDEX IF NOT EXISTS idx_invitations_token ON invitations(token);
-
--- invitations: 有効期限による検索
-CREATE INDEX IF NOT EXISTS idx_invitations_expires_at ON invitations(expires_at);
