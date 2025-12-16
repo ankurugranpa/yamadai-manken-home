@@ -31,12 +31,6 @@ interface AuthState {
   setSession: (session: Session | null) => void;
 
   /**
-   * セッションを初期化する
-   * アプリケーション起動時に呼び出され、既存のセッションを取得する
-   */
-  initialize: () => Promise<void>;
-
-  /**
    * ログアウト処理を実行する
    */
   signOut: () => Promise<void>;
@@ -65,39 +59,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
 
-  initialize: async () => {
-    try {
-      // 既存のセッションを取得
-      const {data, error} = await supabase.auth.getSession();
-
-      if (error) {
-        console.error('セッションの取得に失敗しました:', error);
-        set({isLoading: false});
-        return;
-      }
-
-      set({
-        session: data.session,
-        user: data.session?.user ?? null,
-        isAuthenticated: !!data.session,
-        isLoading: false,
-      });
-
-      // 認証状態の変更を監視
-      supabase.auth.onAuthStateChange((_event, session) => {
-        set({
-          session,
-          user: session?.user ?? null,
-          isAuthenticated: !!session,
-          isLoading: false,
-        });
-      });
-    } catch (error) {
-      console.error('認証の初期化に失敗しました:', error);
-      set({isLoading: false});
-    }
-  },
-
   signOut: async () => {
     try {
       const {error} = await supabase.auth.signOut();
@@ -116,3 +77,42 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 }));
+
+/**
+ * 認証状態を自動的に初期化する
+ * ストア作成時に一度だけ実行され、以降は認証状態の変更を監視する
+ */
+(async () => {
+  let authSubscription: ReturnType<typeof supabase.auth.onAuthStateChange> | null = null;
+
+  try {
+    // 既存のセッションを取得
+    const {data, error} = await supabase.auth.getSession();
+
+    if (error) {
+      console.error('セッションの取得に失敗しました:', error);
+      useAuthStore.setState({isLoading: false});
+      return;
+    }
+
+    useAuthStore.setState({
+      session: data.session,
+      user: data.session?.user ?? null,
+      isAuthenticated: !!data.session,
+      isLoading: false,
+    });
+
+    // 認証状態の変更を監視し、subscriptionを保持
+    authSubscription = supabase.auth.onAuthStateChange((_event, session) => {
+      useAuthStore.setState({
+        session,
+        user: session?.user ?? null,
+        isAuthenticated: !!session,
+        isLoading: false,
+      });
+    });
+  } catch (error) {
+    console.error('認証の初期化に失敗しました:', error);
+    useAuthStore.setState({isLoading: false});
+  }
+})();
