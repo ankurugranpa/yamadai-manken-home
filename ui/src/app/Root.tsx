@@ -6,6 +6,8 @@ import type { PageInfo, RoutePageInfo } from '../types/navigation';
 import { routePages, standalonePages, booksMenus, generateBookRoutes, getBookMenuPages } from './routes';
 import { parseBookPath } from '../lib/utils';
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
+import { useAuthStore } from '../stores/authStore';
 
 /**
  * ページタイプの型定義
@@ -64,6 +66,12 @@ function getRoutesForCurrentPath(currentPath: string, bookId: string | null): {
 export function Root() {
     const location = useLocation();
     const currentPath = location.pathname;
+    const initialize = useAuthStore((state) => state.initialize);
+
+    // アプリケーション起動時に認証状態を初期化
+    useEffect(() => {
+        initialize();
+    }, [initialize]);
 
     // Check if current page is a standalone page (not in carousel loop)
     const standalonePage = standalonePages.find(page => page.path === currentPath);
