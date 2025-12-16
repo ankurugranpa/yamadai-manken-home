@@ -7,7 +7,9 @@ import ArrowForwardIcon from '../assets/ui/arrow_forward_ios_24dp_1F1F1F_FILL0_w
 import MenuIcon from '../assets/ui/menu_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg';
 import { MenuDrawer } from './MenuDrawer'
 import { SnsDrawer } from './SnsDrawer'
-import { MessageCircleMore, BookOpen } from 'lucide-react';
+import { MessageCircleMore, BookOpen, Home } from 'lucide-react';
+import { parseBookPath } from '../lib/utils';
+import { standalonePages } from '../app/routes';
 import '../styles/footer-buttons.css';
 
 interface FooterProps {
@@ -29,13 +31,33 @@ const FOOTER_BUTTON_STYLES = {
 
 export function Footer({ pages, menuPages }: FooterProps) {
   const location = useLocation();
+  
+  // パス情報を自己完結的に判定
+  const { isBookPage } = parseBookPath(location.pathname);
+  const isStandalonePage = standalonePages.some(page => page.path === location.pathname);
+  
+  // 独立ページの場合はホームへ戻るボタンのみを表示（早期リターン）
+  if (isStandalonePage) {
+    return (
+      <div>
+        <footer className="text-white flex-shrink-0 bg-neutral-700 z-50">
+          <div className={`flex items-center justify-center ${FOOTER_BUTTON_STYLES.container} px-0 w-full`}>
+            <Link to="/home" className={FOOTER_BUTTON_STYLES.button}>
+              <Home className="h-6 w-6 text-neutral-50" />
+              <div className={FOOTER_BUTTON_STYLES.text}>ホームに戻る</div>
+            </Link>
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
+  // 通常ページの処理
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
-  
-  const isBookPage = location.pathname.startsWith('/book/');
   
   // "/" パスの場合は "/home" として正規化
   const normalizedCurrentPath = location.pathname === '/' ? '/home' : location.pathname;
