@@ -27,6 +27,12 @@ export function Header() {
             </Link>
           </div>
 
+          {/* Login Button */}
+          <div className="flex-shrink-0">
+            <Link to="/login" className="text-sm font-normal text-neutral-200 hover:text-neutral-50 border border-neutral-200/50 hover:border-neutral-50 px-3 py-1 rounded transition-colors">
+              ログイン
+            </Link>
+          </div>
 
         </div>
       </div>
