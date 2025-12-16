@@ -2,6 +2,7 @@ import { Home } from '../pages/Home';
 import { About } from '../pages/About';
 import { Bookshelf } from '../pages/Bookshelf';
 import { BookPage } from '../pages/BookReader';
+import { Login } from '../pages/Login';
 import type { RoutePageInfo } from '../types/navigation';
 
 // Import menu data for each book
@@ -30,11 +31,20 @@ interface PageData {
 
 /**
  * Standard route pages (Home, About, Bookshelf)
+ * These pages are included in the carousel navigation loop
  */
 export const routePages: RoutePageInfo[] = [
   { path: '/home', title: '表紙', element: <Home /> },
   { path: '/home/about', title: 'About', element: <About /> },
   { path: '/home/bookshelf', title: '本棚', element: <Bookshelf /> }
+];
+
+/**
+ * Standalone pages (Login, etc.)
+ * These pages are NOT included in the carousel navigation loop
+ */
+export const standalonePages: RoutePageInfo[] = [
+  { path: '/login', title: 'ログイン', element: <Login /> }
 ];
 
 /**
