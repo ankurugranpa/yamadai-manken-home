@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { FcGoogle } from 'react-icons/fc';
 import { supabase } from '../lib/supabase';
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Navigate } from 'react-router';
 import { useAuthStore } from '../stores/authStore';
 
 /**
@@ -12,7 +12,6 @@ import { useAuthStore } from '../stores/authStore';
 export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   /**
@@ -52,10 +51,9 @@ export function Login() {
     }
   };
 
-  // 既にログイン済みの場合はホームにリダイレクト
+  // 既にログイン済みの場合はホームにリダイレクト（宣言的）
   if (isAuthenticated) {
-    navigate('/');
-    return null;
+    return <Navigate to="/" replace />;
   }
 
   return (
