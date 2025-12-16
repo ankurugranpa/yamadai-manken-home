@@ -1,0 +1,11 @@
+# Cloudflare Pages Functions のローカル開発用環境変数
+# このファイルは .gitignore に含まれています（機密情報を含むため）
+
+# Auth.js の設定
+AUTH_SECRET="your-local-development-secret-key-change-this"
+AUTH_URL="http://localhost:5173"
+AUTH_TRUST_HOST="true"
+
+# Google OAuth 2.0（Google Cloud Console で取得）
+GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"

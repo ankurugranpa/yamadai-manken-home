@@ -1,0 +1,12 @@
+# Cloudflare Pages configuration
+name = "yamadai-manken-home"
+compatibility_date = "2025-12-16"
+
+# Pages プロジェクトの設定
+pages_build_output_dir = "ui/dist"
+
+# 非機密の環境変数のみここに記載
+# 機密情報 (AUTH_SECRET, GOOGLE_CLIENT_SECRET等) は
+# Cloudflare Dashboard または wrangler pages secret で設定
+[vars]
+NODE_ENV = "production"
