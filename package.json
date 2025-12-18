@@ -7,7 +7,8 @@
     "dev": "cd ui && vite",
     "build": "cd ui && tsc -b && vite build",
     "lint": "cd ui && eslint .",
-    "preview": "cd ui && vite preview"
+    "preview": "cd ui && vite preview",
+    "postinstall": "npm --prefix ui ci --progress=false"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
