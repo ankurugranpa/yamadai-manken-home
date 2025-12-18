@@ -31,6 +31,9 @@ const FOOTER_BUTTON_STYLES = {
 
 export function Footer({ pages, menuPages }: FooterProps) {
   const location = useLocation();
+
+  // 通常ページの処理（Hooksは条件分岐の前で宣言する）
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   // パス情報を自己完結的に判定
   const { isBookPage } = parseBookPath(location.pathname);
@@ -51,9 +54,6 @@ export function Footer({ pages, menuPages }: FooterProps) {
       </div>
     );
   }
-
-  // 通常ページの処理
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
