@@ -83,8 +83,6 @@ export const useAuthStore = create<AuthState>((set) => ({
  * ストア作成時に一度だけ実行され、以降は認証状態の変更を監視する
  */
 (async () => {
-  let authSubscription: ReturnType<typeof supabase.auth.onAuthStateChange> | null = null;
-
   try {
     // 既存のセッションを取得
     const {data, error} = await supabase.auth.getSession();
@@ -102,8 +100,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       isLoading: false,
     });
 
-    // 認証状態の変更を監視し、subscriptionを保持
-    authSubscription = supabase.auth.onAuthStateChange((_event, session) => {
+    // 認証状態の変更を監視
+    supabase.auth.onAuthStateChange((_event, session) => {
       useAuthStore.setState({
         session,
         user: session?.user ?? null,
