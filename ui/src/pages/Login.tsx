@@ -1,26 +1,60 @@
 import { Button } from '@/components/ui/button';
 import { FcGoogle } from 'react-icons/fc';
+import { supabase } from '../lib/supabase';
+import { useState } from 'react';
+import { Navigate } from 'react-router';
+import { useAuthStore } from '../stores/authStore';
 
 /**
  * ログイン画面コンポーネント
- * Googleログインボタンを表示するモック画面
+ * Supabase AuthのGoogle OAuthを使用したログイン機能を提供
  */
 export function Login() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   /**
    * Googleログインボタンのクリックハンドラ
    * 
-   * TODO: Phase 1-2で実装予定の認証処理
-   * 実装内容:
-   *   1. Supabase Auth + Google OAuth 2.0 の統合
-   *   2. supabase.auth.signInWithOAuth({ provider: 'google' }) の呼び出し
-   *   3. 認証成功後に /home へリダイレクト
-   *   4. エラーハンドリング（認証失敗、招待制チェック）
-   * 関連Issue: 次のPhaseで作成予定
+   * Supabase Auth + Google OAuth 2.0 を使用してログイン処理を実行する。
+   * 認証成功後はSupabaseのコールバックURLにリダイレクトされ、
+   * onAuthStateChangeリスナーが自動的に状態を更新する。
    */
-  const handleGoogleLogin = () => {
-    console.log('Google Login clicked');
-    // 現在はモック実装のため、コンソールログのみ
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Supabase AuthのGoogle OAuthログインを実行
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // OAuth処理が開始されると自動的にリダイレクトされるため、
+      // ここでの処理は不要
+    } catch (err) {
+      console.error('ログインエラー:', err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'ログインに失敗しました。もう一度お試しください。'
+      );
+      setIsLoading(false);
+    }
   };
+
+  // 既にログイン済みの場合はホームにリダイレクト（宣言的）
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="h-full w-full flex items-center justify-center bg-white">
@@ -42,6 +76,13 @@ export function Login() {
             </div>
           </div>
 
+          {/* エラーメッセージ */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
           {/* Googleログインボタン */}
           <div className="space-y-4">
             <Button
@@ -49,9 +90,10 @@ export function Login() {
               variant="outline"
               size="lg"
               className="w-full h-12 text-base font-medium hover:bg-gray-50 transition-colors"
+              disabled={isLoading}
             >
               <FcGoogle className="mr-3 h-6 w-6" />
-              Googleでログイン
+              {isLoading ? 'ログイン中...' : 'Googleでログイン'}
             </Button>
           </div>
 
