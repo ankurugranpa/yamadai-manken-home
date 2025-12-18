@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from './ui/carousel';
 
@@ -21,10 +21,10 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
   const isBooksPage = location.pathname.startsWith('/book/');
   
   // URLからスライドのインデックスを計算する関数
-  const getCurrentIndex = () => {
+  const getCurrentIndex = useCallback(() => {
     const currentRoute = routes.findIndex(route => route.path === location.pathname);
     return currentRoute >= 0 ? currentRoute : 0;
-  };
+  }, [location.pathname, routes]);
 
   // 【パターン1】URL変更 → Carouselアニメーション
   // ブラウザの戻る/進むボタンやURL直接入力で発生
@@ -36,7 +36,7 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
       setCurrentIndex(newIndex); // state更新
       api.scrollTo(newIndex); // 🎯 ここで滑らかなアニメーションが発生！
     }
-  }, [location.pathname, api, currentIndex]); // location.pathname（URL）が変わったときに実行
+  }, [api, currentIndex, getCurrentIndex]); // location.pathname（URL）が変わったときに実行
 
   // 【パターン2】Carouselスワイプ → URL更新
   // ユーザーが画面をスワイプしたときに発生
@@ -49,7 +49,7 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
         setCurrentIndex(selectedIndex); // state更新
         const targetPath = routes[selectedIndex]?.path; // スライド番号からURLを取得
         if (targetPath) {
-          navigate(targetPath, { replace: true }); // 🌐 URLを更新（ブラウザのアドレスバーが変わる）
+          void navigate(targetPath, { replace: true }); // 🌐 URLを更新（ブラウザのアドレスバーが変わる）
         }
       }
     };

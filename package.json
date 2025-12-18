@@ -7,6 +7,7 @@
     "dev": "cd ui && vite",
     "build": "cd ui && tsc -b && vite build",
     "lint": "cd ui && eslint .",
+    "typecheck": "cd ui && tsc -b --pretty false",
     "preview": "cd ui && vite preview",
     "postinstall": "npm --prefix ui ci --progress=false"
   },
