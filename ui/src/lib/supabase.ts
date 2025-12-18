@@ -9,12 +9,14 @@
 
 import {createClient} from '@supabase/supabase-js';
 
+const env: Record<string, unknown> = import.meta.env as unknown as Record<string, unknown>;
+
 // 環境変数からSupabaseの設定を取得
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = env.VITE_SUPABASE_URL;
+const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY;
 
 // 環境変数が設定されているか確認
-if (!supabaseUrl || !supabaseAnonKey) {
+if (typeof supabaseUrl !== 'string' || typeof supabaseAnonKey !== 'string' || !supabaseUrl || !supabaseAnonKey) {
   throw new Error(
     'Supabase URLとAnon Keyが設定されていません。.envファイルを確認してください。'
   );
