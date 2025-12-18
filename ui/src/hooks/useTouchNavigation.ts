@@ -106,13 +106,13 @@ export function useTouchNavigation(pages: PageInfo[], currentPath: string) {
       if (deltaX > 0) {
         // 右スワイプ = 次のページ
         if (nextPage) {
-          navigate(nextPage.path);
+          void navigate(nextPage.path);
           return;
         }
       } else {
         // 左スワイプ = 前のページ
         if (prevPage) {
-          navigate(prevPage.path);
+          void navigate(prevPage.path);
           return;
         }
       }
@@ -124,12 +124,12 @@ export function useTouchNavigation(pages: PageInfo[], currentPath: string) {
       if (touchX < screenWidth * TOUCH_AREA_RATIO) {
         // 左側タップ = 次のページ
         if (nextPage) {
-          navigate(nextPage.path);
+          void navigate(nextPage.path);
         }
       } else if (touchX > screenWidth * (1 - TOUCH_AREA_RATIO)) {
         // 右側タップ = 前のページ
         if (prevPage) {
-          navigate(prevPage.path);
+          void navigate(prevPage.path);
         }
       }
     }

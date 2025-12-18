@@ -20,7 +20,7 @@ export function Bookshelf() {
 
   const handleBookSelect = (bookId: string) => {
     // 最初のページ（page/0 = 027.png）から開始
-    navigate(`/book/${bookId}/page/0`);
+    void navigate(`/book/${bookId}/page/0`);
   };
 
   return (

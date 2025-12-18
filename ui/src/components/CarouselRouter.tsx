@@ -49,7 +49,7 @@ export function CarouselRouter({ routes }: CarouselRouterProps) {
         setCurrentIndex(selectedIndex); // state更新
         const targetPath = routes[selectedIndex]?.path; // スライド番号からURLを取得
         if (targetPath) {
-          navigate(targetPath, { replace: true }); // 🌐 URLを更新（ブラウザのアドレスバーが変わる）
+          void navigate(targetPath, { replace: true }); // 🌐 URLを更新（ブラウザのアドレスバーが変わる）
         }
       }
     };

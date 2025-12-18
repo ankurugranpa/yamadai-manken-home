@@ -82,7 +82,7 @@ export const useAuthStore = create<AuthState>((set) => ({
  * 認証状態を自動的に初期化する
  * ストア作成時に一度だけ実行され、以降は認証状態の変更を監視する
  */
-(async () => {
+void (async () => {
   try {
     // 既存のセッションを取得
     const {data, error} = await supabase.auth.getSession();
