@@ -23,6 +23,8 @@ interface AuthState {
   isLoading: boolean;
   /** 認証済みかどうか */
   isAuthenticated: boolean;
+  /** 認証エラー情報 */
+  authError: { code: string; description: string } | null;
 
   /**
    * ユーザーとセッションを設定する
@@ -34,6 +36,11 @@ interface AuthState {
    * ログアウト処理を実行する
    */
   signOut: () => Promise<void>;
+
+  /**
+   * エラーをクリアする
+   */
+  clearError: () => void;
 }
 
 /**
@@ -49,6 +56,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   isLoading: true,
   isAuthenticated: false,
+  authError: null,
 
   setSession: (session) => {
     set({
@@ -70,11 +78,16 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: null,
         session: null,
         isAuthenticated: false,
+        authError: null,
       });
     } catch (error) {
       console.error('ログアウト処理中にエラーが発生しました:', error);
       throw error;
     }
+  },
+
+  clearError: () => {
+    set({ authError: null });
   },
 }));
 
@@ -84,7 +97,51 @@ export const useAuthStore = create<AuthState>((set) => ({
  */
 void (async () => {
   try {
-    // 既存のセッションを取得
+    // URLからエラーパラメータをチェック
+    const url = new URL(window.location.href);
+    const errorCode = url.searchParams.get('error_code') || url.hash.match(/error_code=([^&]+)/)?.[1];
+    const errorDescription = url.searchParams.get('error_description') || url.hash.match(/error_description=([^&]+)/)?.[1];
+    
+    if (errorCode) {
+      const decodedDescription = errorDescription ? decodeURIComponent(errorDescription.replace(/\+/g, ' ')) : '';
+      useAuthStore.setState({
+        authError: {
+          code: errorCode,
+          description: decodedDescription,
+        },
+      });
+      
+      // URLからエラーパラメータをクリーンアップ
+      url.searchParams.delete('error');
+      url.searchParams.delete('error_code');
+      url.searchParams.delete('error_description');
+      url.hash = '';
+      window.history.replaceState({}, '', url.pathname);
+    }
+
+    // 認証状態の変更を監視（これを先に設定）
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (import.meta.env.DEV) {
+        console.log('Auth state changed:', _event, session?.user?.email);
+      }
+      useAuthStore.setState({
+        session,
+        user: session?.user ?? null,
+        isAuthenticated: !!session,
+        isLoading: false,
+      });
+
+      // 認証成功後、URLのcodeパラメータをクリーンアップ
+      if (_event === 'SIGNED_IN' && session) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('code')) {
+          url.searchParams.delete('code');
+          window.history.replaceState({}, '', url.toString());
+        }
+      }
+    });
+
+    // 既存のセッションを取得（PKCEコード交換も自動的に実行される）
     const {data, error} = await supabase.auth.getSession();
 
     if (error) {
@@ -93,21 +150,15 @@ void (async () => {
       return;
     }
 
+    if (import.meta.env.DEV) {
+      console.log('Session retrieved:', data.session?.user?.email);
+    }
+    
     useAuthStore.setState({
       session: data.session,
       user: data.session?.user ?? null,
       isAuthenticated: !!data.session,
       isLoading: false,
-    });
-
-    // 認証状態の変更を監視
-    supabase.auth.onAuthStateChange((_event, session) => {
-      useAuthStore.setState({
-        session,
-        user: session?.user ?? null,
-        isAuthenticated: !!session,
-        isLoading: false,
-      });
     });
   } catch (error) {
     console.error('認証の初期化に失敗しました:', error);

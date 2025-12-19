@@ -31,6 +31,7 @@ export function Login() {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/`,
+          skipBrowserRedirect: false,
         },
       });
 
@@ -41,12 +42,11 @@ export function Login() {
       // OAuth処理が開始されると自動的にリダイレクトされるため、
       // ここでの処理は不要
     } catch (err) {
-      console.error('ログインエラー:', err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'ログインに失敗しました。もう一度お試しください。'
-      );
+      if (import.meta.env.DEV) {
+        console.error('ログインエラー:', err);
+      }
+      // セキュリティのため、詳細なエラーメッセージは表示しない
+      setError('ログインに失敗しました。もう一度お試しください。');
       setIsLoading(false);
     }
   };

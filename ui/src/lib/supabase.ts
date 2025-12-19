@@ -22,9 +22,28 @@ if (typeof supabaseUrl !== 'string' || typeof supabaseAnonKey !== 'string' || !s
   );
 }
 
+// URLの形式を検証（基本的なチェック）
+try {
+  const url = new URL(supabaseUrl);
+  if (!url.hostname.includes('supabase')) {
+    if (import.meta.env.DEV) {
+      console.warn('警告: Supabase URLの形式が通常と異なります');
+    }
+  }
+} catch {
+  throw new Error('Supabase URLの形式が不正です');
+}
+
 /**
  * Supabaseクライアントのインスタンス
  *
  * このインスタンスはアプリケーション全体で共有される。
  */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    flowType: 'pkce',
+    detectSessionInUrl: true,
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
