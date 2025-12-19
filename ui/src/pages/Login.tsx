@@ -29,11 +29,8 @@ export function Login() {
       // Supabase AuthのGoogle OAuthログインを実行
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`,
-          skipBrowserRedirect: false,
-        },
       });
+
 
       if (error) {
         throw error;
